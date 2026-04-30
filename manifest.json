@@ -1,0 +1,10 @@
+{
+	"id": "iso-me-maps",
+	"name": "iso.me Maps",
+	"version": "0.1.0",
+	"minAppVersion": "1.4.10",
+	"description": "Render Leaflet maps inline in notes from iso.me location exports — visits, routes, and heatmaps.",
+	"author": "Cody Bontecou",
+	"authorUrl": "https://github.com/codybontecou",
+	"isDesktopOnly": false
+}
