@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-iso-me-maps",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Obsidian plugin that renders Leaflet maps inline from iso.me location exports.",
 	"repository": {
 		"type": "git",

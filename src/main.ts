@@ -1,7 +1,12 @@
 import { Plugin } from "obsidian";
 import { parseBlockConfig } from "./parser";
 import { MapRenderChild } from "./render/map-block";
-import { DEFAULT_SETTINGS, IsoMeSettings, IsoMeSettingTab } from "./settings";
+import {
+	DEFAULT_SETTINGS,
+	IsoMeSettings,
+	IsoMeSettingTab,
+	LEGACY_OSM_TILE_URL,
+} from "./settings";
 
 export default class IsoMeMapsPlugin extends Plugin {
 	settings: IsoMeSettings = DEFAULT_SETTINGS;
@@ -21,6 +26,13 @@ export default class IsoMeMapsPlugin extends Plugin {
 	async loadSettings(): Promise<void> {
 		const data = (await this.loadData()) as Partial<IsoMeSettings> | null;
 		this.settings = { ...DEFAULT_SETTINGS, ...(data ?? {}) };
+		// Migrate installs that saved the legacy OSM tile URL — desktop Obsidian
+		// gets 403'd by OSM's referer policy, so swap to the new default.
+		if (this.settings.tileUrl === LEGACY_OSM_TILE_URL) {
+			this.settings.tileUrl = DEFAULT_SETTINGS.tileUrl;
+			this.settings.tileAttribution = DEFAULT_SETTINGS.tileAttribution;
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings(): Promise<void> {

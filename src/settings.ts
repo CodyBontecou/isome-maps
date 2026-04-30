@@ -16,10 +16,15 @@ export interface IsoMeSettings {
 	showHeatmapByDefault: boolean;
 }
 
+// OSM's volunteer tile servers reject requests from Electron because the
+// Obsidian desktop client's referer header doesn't match their policy. Default
+// to CartoDB Voyager (OSM-styled, no referer requirement, free attribution use).
+export const LEGACY_OSM_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+
 export const DEFAULT_SETTINGS: IsoMeSettings = {
-	tileUrl: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+	tileUrl: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
 	tileAttribution:
-		'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+		'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
 	defaultHeight: 400,
 	defaultCenter: [0, 0],
 	defaultZoom: 11,
