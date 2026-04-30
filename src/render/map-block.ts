@@ -4,6 +4,7 @@ import { DataLoadError, loadExport } from "../data-loader";
 import { IsoMeSettings } from "../settings";
 import { BlockConfig, ExportShape } from "../types";
 import { renderHeatLayer } from "./heatmap";
+import { renderOutlierMarkers } from "./outliers";
 import { renderRoutePolyline } from "./routes";
 import { renderVisitMarkers } from "./visits";
 
@@ -67,16 +68,15 @@ export class MapRenderChild extends MarkdownRenderChild {
 		const showVisits = this.cfg.show_visits ?? this.settings.showVisitsByDefault;
 		const showRoutes = this.cfg.show_routes ?? this.settings.showRoutesByDefault;
 		const showHeatmap = this.cfg.show_heatmap ?? this.settings.showHeatmapByDefault;
+		const showOutliers = this.cfg.show_outliers ?? this.settings.showOutliersByDefault;
 
 		const visits = showVisits && data.visits ? data.visits : [];
-		const points = data.points ?? [];
+		const allPoints = data.points ?? [];
+		const cleanPoints = allPoints.filter((p) => !p.isOutlier);
+		const outlierPoints = allPoints.filter((p) => p.isOutlier);
 
-		if (visits.length === 0 && points.length === 0) {
-			this.renderEmpty(
-				visits.length === 0 && points.length === 0
-					? "Export contains no visits or location points."
-					: "Nothing to render with current display flags.",
-			);
+		if (visits.length === 0 && allPoints.length === 0) {
+			this.renderEmpty("Export contains no visits or location points.");
 			return;
 		}
 
@@ -101,15 +101,26 @@ export class MapRenderChild extends MarkdownRenderChild {
 			bounds.push(...renderVisitMarkers(map, visits, this.settings.markerColor));
 		}
 
-		if (showRoutes && points.length > 0) {
-			bounds.push(...renderRoutePolyline(map, points, this.settings.routeColor));
+		if (showRoutes && cleanPoints.length > 0) {
+			bounds.push(...renderRoutePolyline(map, cleanPoints, this.settings.routeColor));
 		}
 
-		if (showHeatmap && points.length > 0) {
-			renderHeatLayer(map, points, this.settings.heatRadius, this.settings.heatBlur);
+		if (showHeatmap && cleanPoints.length > 0) {
+			renderHeatLayer(
+				map,
+				cleanPoints,
+				this.settings.heatRadius,
+				this.settings.heatBlur,
+			);
 			if (!showRoutes) {
-				for (const p of points) bounds.push([p.latitude, p.longitude]);
+				for (const p of cleanPoints) bounds.push([p.latitude, p.longitude]);
 			}
+		}
+
+		if (showOutliers && outlierPoints.length > 0) {
+			bounds.push(
+				...renderOutlierMarkers(map, outlierPoints, this.settings.outlierColor),
+			);
 		}
 
 		if (bounds.length === 0) {

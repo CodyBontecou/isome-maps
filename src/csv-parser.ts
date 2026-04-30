@@ -1,0 +1,192 @@
+import { ExportShape, LocationPoint, Visit } from "./types";
+
+export class CSVParseError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "CSVParseError";
+	}
+}
+
+function parseCSV(text: string): string[][] {
+	const rows: string[][] = [];
+	let row: string[] = [];
+	let field = "";
+	let i = 0;
+	let inQuotes = false;
+	const len = text.length;
+
+	while (i < len) {
+		const c = text[i]!;
+		if (inQuotes) {
+			if (c === '"') {
+				if (i + 1 < len && text[i + 1] === '"') {
+					field += '"';
+					i += 2;
+					continue;
+				}
+				inQuotes = false;
+				i++;
+				continue;
+			}
+			field += c;
+			i++;
+			continue;
+		}
+		if (c === '"') {
+			inQuotes = true;
+			i++;
+			continue;
+		}
+		if (c === ",") {
+			row.push(field);
+			field = "";
+			i++;
+			continue;
+		}
+		if (c === "\r") {
+			i++;
+			continue;
+		}
+		if (c === "\n") {
+			row.push(field);
+			rows.push(row);
+			row = [];
+			field = "";
+			i++;
+			continue;
+		}
+		field += c;
+		i++;
+	}
+
+	if (field.length > 0 || row.length > 0) {
+		row.push(field);
+		rows.push(row);
+	}
+
+	return rows.filter((r) => !(r.length === 1 && r[0] === ""));
+}
+
+function toFiniteNumber(value: string | undefined): number | null {
+	if (value === undefined) return null;
+	const trimmed = value.trim();
+	if (trimmed === "") return null;
+	const n = Number(trimmed);
+	return Number.isFinite(n) ? n : null;
+}
+
+function toBool(value: string | undefined): boolean {
+	if (!value) return false;
+	const v = value.trim().toLowerCase();
+	return v === "true" || v === "yes" || v === "1";
+}
+
+function toString(value: string | undefined): string | null {
+	if (value === undefined) return null;
+	const trimmed = value;
+	return trimmed === "" ? null : trimmed;
+}
+
+function buildHeaderMap(headers: string[]): Map<string, number> {
+	const map = new Map<string, number>();
+	headers.forEach((h, idx) => {
+		map.set(h.trim().toLowerCase(), idx);
+	});
+	return map;
+}
+
+function isVisitsCSV(headers: Map<string, number>): boolean {
+	return headers.has("arrived_at");
+}
+
+function isPointsCSV(headers: Map<string, number>): boolean {
+	return headers.has("timestamp") && headers.has("latitude") && headers.has("longitude");
+}
+
+function parseVisits(rows: string[][], headers: Map<string, number>): Visit[] {
+	const idx = (key: string) => headers.get(key);
+	const visits: Visit[] = [];
+
+	for (let r = 1; r < rows.length; r++) {
+		const row = rows[r]!;
+		const arrivedAt = idx("arrived_at") !== undefined ? row[idx("arrived_at")!] : undefined;
+		const lat = idx("latitude") !== undefined ? toFiniteNumber(row[idx("latitude")!]) : null;
+		const lon = idx("longitude") !== undefined ? toFiniteNumber(row[idx("longitude")!]) : null;
+		if (!arrivedAt || lat === null || lon === null) continue;
+
+		visits.push({
+			latitude: lat,
+			longitude: lon,
+			arrivedAt,
+			departedAt: idx("departed_at") !== undefined ? toString(row[idx("departed_at")!]) : null,
+			durationMinutes:
+				idx("duration_minutes") !== undefined
+					? toFiniteNumber(row[idx("duration_minutes")!])
+					: null,
+			locationName:
+				idx("location_name") !== undefined ? toString(row[idx("location_name")!]) : null,
+			address: idx("address") !== undefined ? toString(row[idx("address")!]) : null,
+			notes: idx("notes") !== undefined ? toString(row[idx("notes")!]) : null,
+		});
+	}
+	return visits;
+}
+
+function parsePoints(rows: string[][], headers: Map<string, number>): LocationPoint[] {
+	const idx = (key: string) => headers.get(key);
+	const points: LocationPoint[] = [];
+
+	for (let r = 1; r < rows.length; r++) {
+		const row = rows[r]!;
+		const timestamp = idx("timestamp") !== undefined ? row[idx("timestamp")!] : undefined;
+		const lat = idx("latitude") !== undefined ? toFiniteNumber(row[idx("latitude")!]) : null;
+		const lon = idx("longitude") !== undefined ? toFiniteNumber(row[idx("longitude")!]) : null;
+		if (!timestamp || lat === null || lon === null) continue;
+
+		const tsUnix =
+			idx("timestamp_unix") !== undefined
+				? toFiniteNumber(row[idx("timestamp_unix")!])
+				: null;
+		const isOutlier =
+			idx("is_outlier") !== undefined ? toBool(row[idx("is_outlier")!]) : false;
+
+		points.push({
+			latitude: lat,
+			longitude: lon,
+			timestamp,
+			timestampUnix: tsUnix ?? undefined,
+			altitude:
+				idx("altitude") !== undefined ? toFiniteNumber(row[idx("altitude")!]) : null,
+			speed: idx("speed") !== undefined ? toFiniteNumber(row[idx("speed")!]) : null,
+			course: null,
+			horizontalAccuracy:
+				idx("horizontal_accuracy") !== undefined
+					? toFiniteNumber(row[idx("horizontal_accuracy")!])
+					: null,
+			verticalAccuracy: null,
+			isOutlier,
+		});
+	}
+	return points;
+}
+
+export function parseExportCSV(text: string): ExportShape {
+	const rows = parseCSV(text);
+	if (rows.length === 0) {
+		throw new CSVParseError("CSV is empty");
+	}
+
+	const headerRow = rows[0]!;
+	const headers = buildHeaderMap(headerRow);
+
+	if (isVisitsCSV(headers)) {
+		return { visits: parseVisits(rows, headers), points: null };
+	}
+	if (isPointsCSV(headers)) {
+		return { visits: null, points: parsePoints(rows, headers) };
+	}
+
+	throw new CSVParseError(
+		`Unrecognized CSV header. Expected iso.me visits (arrived_at,...) or points (timestamp,latitude,longitude,...). Got: ${headerRow.join(",")}`,
+	);
+}

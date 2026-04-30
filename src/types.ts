@@ -19,6 +19,7 @@ export interface LocationPoint {
 	course?: number | null;
 	horizontalAccuracy?: number | null;
 	verticalAccuracy?: number | null;
+	isOutlier?: boolean;
 }
 
 export interface ExportShape {
@@ -35,5 +36,6 @@ export interface BlockConfig {
 	show_visits?: boolean;
 	show_routes?: boolean;
 	show_heatmap?: boolean;
+	show_outliers?: boolean;
 	title?: string;
 }

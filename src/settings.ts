@@ -9,11 +9,13 @@ export interface IsoMeSettings {
 	defaultZoom: number;
 	markerColor: string;
 	routeColor: string;
+	outlierColor: string;
 	heatRadius: number;
 	heatBlur: number;
 	showVisitsByDefault: boolean;
 	showRoutesByDefault: boolean;
 	showHeatmapByDefault: boolean;
+	showOutliersByDefault: boolean;
 }
 
 // OSM's volunteer tile servers reject requests from Electron because the
@@ -30,11 +32,13 @@ export const DEFAULT_SETTINGS: IsoMeSettings = {
 	defaultZoom: 11,
 	markerColor: "#2dd4bf",
 	routeColor: "#2563eb",
+	outlierColor: "#f59e0b",
 	heatRadius: 25,
 	heatBlur: 15,
 	showVisitsByDefault: true,
 	showRoutesByDefault: true,
 	showHeatmapByDefault: false,
+	showOutliersByDefault: false,
 };
 
 export class IsoMeSettingTab extends PluginSettingTab {
@@ -118,6 +122,17 @@ export class IsoMeSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("GPS glitch (outlier) color")
+			.setDesc("Color for points iso.me has flagged as outliers when shown.")
+			.addText((t) =>
+				t.setValue(this.plugin.settings.outlierColor).onChange(async (v) => {
+					this.plugin.settings.outlierColor =
+						v.trim() || DEFAULT_SETTINGS.outlierColor;
+					await this.plugin.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
 			.setName("Heatmap radius")
 			.addText((t) =>
 				t
@@ -168,6 +183,18 @@ export class IsoMeSettingTab extends PluginSettingTab {
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.showHeatmapByDefault).onChange(async (v) => {
 					this.plugin.settings.showHeatmapByDefault = v;
+					await this.plugin.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Show GPS glitches (outliers) by default")
+			.setDesc(
+				"Render points iso.me has flagged as outliers as small scatter dots. Outliers are always excluded from the route polyline and heatmap.",
+			)
+			.addToggle((t) =>
+				t.setValue(this.plugin.settings.showOutliersByDefault).onChange(async (v) => {
+					this.plugin.settings.showOutliersByDefault = v;
 					await this.plugin.saveSettings();
 				}),
 			);

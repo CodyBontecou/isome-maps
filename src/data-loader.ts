@@ -1,4 +1,6 @@
 import { App, normalizePath } from "obsidian";
+import { CSVParseError, parseExportCSV } from "./csv-parser";
+import { MarkdownParseError, parseExportMarkdown } from "./markdown-parser";
 import { ExportShape, LocationPoint, Visit } from "./types";
 
 export class DataLoadError extends Error {
@@ -44,18 +46,11 @@ function coercePoint(raw: unknown): LocationPoint | null {
 		course: isFiniteNumber(r.course) ? r.course : null,
 		horizontalAccuracy: isFiniteNumber(r.horizontalAccuracy) ? r.horizontalAccuracy : null,
 		verticalAccuracy: isFiniteNumber(r.verticalAccuracy) ? r.verticalAccuracy : null,
+		isOutlier: typeof r.isOutlier === "boolean" ? r.isOutlier : false,
 	};
 }
 
-export async function loadExport(app: App, source: string): Promise<ExportShape> {
-	const path = normalizePath(source);
-	let raw: string;
-	try {
-		raw = await app.vault.adapter.read(path);
-	} catch (e) {
-		throw new DataLoadError(`File not found: ${path}`, path);
-	}
-
+function parseJSONExport(raw: string, path: string): ExportShape {
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(raw);
@@ -91,4 +86,43 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 		points,
 		exportDate: typeof root.exportDate === "string" ? root.exportDate : undefined,
 	};
+}
+
+function detectFormat(path: string): "json" | "csv" | "markdown" {
+	const lower = path.toLowerCase();
+	if (lower.endsWith(".csv")) return "csv";
+	if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "markdown";
+	return "json";
+}
+
+export async function loadExport(app: App, source: string): Promise<ExportShape> {
+	const path = normalizePath(source);
+	let raw: string;
+	try {
+		raw = await app.vault.adapter.read(path);
+	} catch (e) {
+		throw new DataLoadError(`File not found: ${path}`, path);
+	}
+
+	const format = detectFormat(path);
+
+	if (format === "csv") {
+		try {
+			return parseExportCSV(raw);
+		} catch (e) {
+			const msg = e instanceof CSVParseError || e instanceof Error ? e.message : String(e);
+			throw new DataLoadError(`Invalid CSV: ${msg}`, path);
+		}
+	}
+
+	if (format === "markdown") {
+		try {
+			return parseExportMarkdown(raw);
+		} catch (e) {
+			const msg = e instanceof MarkdownParseError || e instanceof Error ? e.message : String(e);
+			throw new DataLoadError(`Invalid Markdown: ${msg}`, path);
+		}
+	}
+
+	return parseJSONExport(raw, path);
 }

@@ -1,14 +1,15 @@
 # iso.me Maps for Obsidian
 
-Render Leaflet maps inline in your Obsidian notes from JSON exports produced by the [iso.me](https://iso.me) iOS app.
+Render Leaflet maps inline in your Obsidian notes from exports produced by the [iso.me](https://iso.me) iOS app.
 
 ## What it does
 
-Drop a JSON export from iso.me into your vault, then reference it from any note with a fenced ` ```iso-me ` code block. The plugin reads the file and renders an interactive map with:
+Drop a JSON, CSV, or Markdown export from iso.me into your vault, then reference it from any note with a fenced ` ```iso-me ` code block. The plugin reads the file and renders an interactive map with:
 
 - **Visit markers** — pins for each visit with a popup showing the location name, address, arrival/departure times, and duration.
 - **Route polylines** — connected GPS tracks with start (green) and end (red) markers.
 - **Heatmap** — optional density overlay over the GPS points.
+- **GPS glitches** — points iso.me has flagged as outliers, optionally rendered as small scatter dots. Hidden by default; the route polyline and heatmap always exclude them so they don't skew the track.
 
 ## Usage
 
@@ -21,19 +22,33 @@ center: [37.7749, -122.4194]
 show_visits: true
 show_routes: true
 show_heatmap: false
+show_outliers: false
 title: April 2026 trip
 ```
 ````
 
-`source` is required and resolved relative to vault root. All other keys are optional and override plugin settings. The plugin auto-detects whether the file contains visits, location points, or both.
+`source` is required and resolved relative to vault root. The file extension determines the parser (`.json`, `.csv`, `.md`/`.markdown`). All other keys are optional and override plugin settings. The plugin auto-detects whether the file contains visits, location points, or both.
 
-## Supported iso.me export shapes
+## Supported iso.me export formats
 
-- Visits-only: `{ exportDate, visits: [...] }`
-- Points-only: `{ exportDate, points: [...] }`
-- Combined: `{ visits: [...], points: [...] }`
+All three formats from the iso.me **Settings → Export** flow are accepted:
 
-Generate any of these via the iso.me Settings → Export flow.
+**JSON** — visits, points, or combined:
+- `{ exportDate, visits: [...] }`
+- `{ exportDate, points: [...] }`
+- `{ visits: [...], points: [...] }`
+
+**CSV** — auto-detected by header row:
+- Visits: `arrived_at,departed_at[,duration_minutes][,latitude,longitude][,location_name][,address][,notes]`
+- Points: `timestamp,timestamp_unix,latitude,longitude[,altitude][,speed][,horizontal_accuracy][,is_outlier]` (rows with `is_outlier=true` are skipped)
+
+For visits CSV the `latitude` / `longitude` columns must be present (enable "Coordinates" in the iso.me export options) — without coordinates, visits cannot be plotted.
+
+**Markdown** — auto-detected by H1:
+- Visits: `# iso.me Export` with `## <date>` day groups and `### <visit>` blocks containing `- **Arrived/Departed/Duration/Address/Coordinates:** ...` bullets and an optional `> notes` blockquote.
+- Points: `# iso.me Location Points Export` with `## <date>` day groups and `| Time | Lat | Lon | ... |` tables.
+
+Markdown parsing assumes the exported dates/times are in en-US format (e.g. `Friday, March 14, 2025` and `3:24 PM`), which matches the iso.me default. JSON and CSV are locale-independent.
 
 ## Development
 

@@ -1,6 +1,6 @@
 import { BlockConfig } from "./types";
 
-const BOOL_KEYS = new Set(["show_visits", "show_routes", "show_heatmap"]);
+const BOOL_KEYS = new Set(["show_visits", "show_routes", "show_heatmap", "show_outliers"]);
 const NUMBER_KEYS = new Set(["zoom", "height"]);
 
 function parseCenter(value: string): [number, number] | undefined {
@@ -48,6 +48,7 @@ export function parseBlockConfig(source: string): BlockConfig {
 				if (key === "show_visits") cfg.show_visits = b;
 				else if (key === "show_routes") cfg.show_routes = b;
 				else if (key === "show_heatmap") cfg.show_heatmap = b;
+				else if (key === "show_outliers") cfg.show_outliers = b;
 			}
 		}
 	}
