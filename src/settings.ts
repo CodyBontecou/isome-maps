@@ -154,6 +154,9 @@ export class IsoMeSettingTab extends PluginSettingTab {
 				cls: "mod-warning",
 			});
 		}
+		providerSetting.descEl.createEl("div", {
+			text: "Already-open notes keep their current basemap until you reload the note (or Obsidian).",
+		});
 
 		if (this.plugin.settings.tileProvider === "custom") {
 			new Setting(containerEl)
