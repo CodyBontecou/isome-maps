@@ -46,7 +46,7 @@ function buildPopup(visit: Visit): string {
 }
 
 export function renderVisitMarkers(
-	map: L.Map,
+	target: L.LayerGroup,
 	visits: Visit[],
 	color: string,
 ): L.LatLngTuple[] {
@@ -61,7 +61,7 @@ export function renderVisitMarkers(
 			weight: 2,
 		})
 			.bindPopup(buildPopup(v))
-			.addTo(map);
+			.addTo(target);
 		bounds.push(latlng);
 	}
 	return bounds;

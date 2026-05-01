@@ -728,3 +728,79 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	color: #333;
 	font-style: italic;
 }
+
+.iso-me-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px 16px;
+	padding: 8px 10px;
+	margin-bottom: 6px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-secondary);
+	font-size: 0.85em;
+}
+
+.iso-me-control {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.iso-me-time-control {
+	flex: 1 1 280px;
+	min-width: 240px;
+}
+
+.iso-me-control-label {
+	color: var(--text-muted);
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.iso-me-day-select {
+	background: var(--background-primary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 2px 6px;
+	font-size: inherit;
+	max-width: 220px;
+}
+
+.iso-me-time-sliders {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex: 1;
+	min-width: 0;
+}
+
+.iso-me-time-range {
+	flex: 1;
+	min-width: 60px;
+	accent-color: var(--interactive-accent);
+}
+
+.iso-me-time-label {
+	color: var(--text-muted);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	min-width: 78px;
+	text-align: center;
+}
+
+.iso-me-control-reset {
+	background: var(--background-primary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 2px 10px;
+	font-size: inherit;
+	cursor: pointer;
+}
+
+.iso-me-control-reset:hover {
+	background: var(--background-modifier-hover);
+}

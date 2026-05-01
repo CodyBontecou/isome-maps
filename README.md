@@ -31,6 +31,18 @@ title: April 2026 trip
 
 `source` is required and resolved relative to vault root. The file extension determines the parser (`.json`, `.csv`, `.md`/`.markdown`). All other keys are optional and override plugin settings. The plugin auto-detects whether the file contains visits, location points, or both.
 
+### Interactive filters
+
+Set `interactive: true` to render a control bar above the map with a day picker (each day in the export plus "All days") and a time-of-day range slider. Changing either re-renders the visit, route, heatmap, and outlier layers in place and auto-fits the map to the new selection.
+
+````markdown
+```iso-me
+source: exports/iso-export-2026-04.json
+interactive: true
+height: 500
+```
+````
+
 ### Combining multiple files in one map
 
 iso.me's CSV and Markdown exports split visits and location points into separate files. To render both layers on a single map, use `sources:` with a list:

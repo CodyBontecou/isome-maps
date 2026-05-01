@@ -3,7 +3,7 @@ import "leaflet.heat";
 import { LocationPoint } from "../types";
 
 export function renderHeatLayer(
-	map: L.Map,
+	target: L.LayerGroup,
 	points: LocationPoint[],
 	radius: number,
 	blur: number,
@@ -14,5 +14,5 @@ export function renderHeatLayer(
 		p.longitude,
 		1,
 	]);
-	L.heatLayer(data, { radius, blur }).addTo(map);
+	L.heatLayer(data, { radius, blur }).addTo(target);
 }

@@ -2,7 +2,7 @@ import * as L from "leaflet";
 import { LocationPoint } from "../types";
 
 export function renderOutlierMarkers(
-	map: L.Map,
+	target: L.LayerGroup,
 	points: LocationPoint[],
 	color: string,
 ): L.LatLngTuple[] {
@@ -17,7 +17,7 @@ export function renderOutlierMarkers(
 			weight: 1,
 		})
 			.bindPopup(`<div class="iso-me-popup-outlier">GPS glitch · ${p.timestamp}</div>`)
-			.addTo(map);
+			.addTo(target);
 		bounds.push(latlng);
 	}
 	return bounds;

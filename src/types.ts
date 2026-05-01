@@ -38,5 +38,6 @@ export interface BlockConfig {
 	show_routes?: boolean;
 	show_heatmap?: boolean;
 	show_outliers?: boolean;
+	interactive?: boolean;
 	title?: string;
 }

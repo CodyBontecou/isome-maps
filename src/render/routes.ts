@@ -15,7 +15,7 @@ function downsample<T>(arr: T[], max: number): T[] {
 }
 
 export function renderRoutePolyline(
-	map: L.Map,
+	target: L.LayerGroup,
 	points: LocationPoint[],
 	color: string,
 ): L.LatLngTuple[] {
@@ -30,7 +30,7 @@ export function renderRoutePolyline(
 			fillColor: color,
 			fillOpacity: 1,
 			weight: 2,
-		}).addTo(map);
+		}).addTo(target);
 		return [latlng];
 	}
 
@@ -45,7 +45,7 @@ export function renderRoutePolyline(
 		opacity: 0.9,
 		lineCap: "round",
 		lineJoin: "round",
-	}).addTo(map);
+	}).addTo(target);
 
 	const start = coords[0]!;
 	const end = coords[coords.length - 1]!;
@@ -55,14 +55,14 @@ export function renderRoutePolyline(
 		fillColor: "#22c55e",
 		fillOpacity: 1,
 		weight: 2,
-	}).addTo(map);
+	}).addTo(target);
 	L.circleMarker(end, {
 		radius: 6,
 		color: "#ef4444",
 		fillColor: "#ef4444",
 		fillOpacity: 1,
 		weight: 2,
-	}).addTo(map);
+	}).addTo(target);
 
 	return coords;
 }
