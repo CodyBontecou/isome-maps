@@ -19,15 +19,55 @@ function parseBool(value: string): boolean | undefined {
 	return undefined;
 }
 
+function unquote(value: string): string {
+	return value.replace(/^["'](.*)["']$/, "$1");
+}
+
+function splitListValue(value: string): string[] {
+	let inner = value.trim();
+	if (inner.startsWith("[") && inner.endsWith("]")) {
+		inner = inner.slice(1, -1);
+	}
+	return inner
+		.split(",")
+		.map((s) => unquote(s.trim()))
+		.filter((s) => s.length > 0);
+}
+
 export function parseBlockConfig(source: string): BlockConfig {
 	const cfg: BlockConfig = {};
-	for (const rawLine of source.split(/\r?\n/)) {
+	const lines = source.split(/\r?\n/);
+	let i = 0;
+
+	while (i < lines.length) {
+		const rawLine = lines[i]!;
 		const line = rawLine.trim();
+		i++;
+
 		if (!line || line.startsWith("#")) continue;
-		const m = line.match(/^([a-z_-]+)\s*:\s*(.+)$/i);
+		const m = line.match(/^([a-z_-]+)\s*:\s*(.*)$/i);
 		if (!m) continue;
 		const key = m[1]!.toLowerCase();
-		const value = m[2]!.trim().replace(/^["'](.*)["']$/, "$1");
+		const rawValue = m[2]!.trim();
+		const value = unquote(rawValue);
+
+		if (key === "sources") {
+			const collected: string[] = [];
+			if (rawValue.length > 0) {
+				collected.push(...splitListValue(rawValue));
+			} else {
+				while (i < lines.length) {
+					const itemMatch = lines[i]!.match(/^\s*-\s+(.+?)\s*$/);
+					if (!itemMatch) break;
+					collected.push(unquote(itemMatch[1]!));
+					i++;
+				}
+			}
+			if (collected.length > 0) cfg.sources = collected;
+			continue;
+		}
+
+		if (rawValue.length === 0) continue;
 
 		if (key === "source") {
 			cfg.source = value;

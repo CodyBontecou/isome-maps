@@ -1,6 +1,6 @@
 import * as L from "leaflet";
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from "obsidian";
-import { DataLoadError, loadExport } from "../data-loader";
+import { DataLoadError, loadExports } from "../data-loader";
 import { IsoMeSettings } from "../settings";
 import { BlockConfig, ExportShape } from "../types";
 import { renderHeatLayer } from "./heatmap";
@@ -44,16 +44,20 @@ export class MapRenderChild extends MarkdownRenderChild {
 			});
 		}
 
-		if (!this.cfg.source) {
+		const sources: string[] = [];
+		if (this.cfg.source) sources.push(this.cfg.source);
+		if (this.cfg.sources) sources.push(...this.cfg.sources);
+
+		if (sources.length === 0) {
 			this.renderError(
-				"Missing required `source:` key. Point it at a JSON export from iso.me, e.g. `source: exports/iso-export.json`.",
+				"Missing required `source:` (or `sources:`) key. Point it at an iso.me export file (.json, .csv, or .md).",
 			);
 			return;
 		}
 
 		let data: ExportShape;
 		try {
-			data = await loadExport(this.app, this.cfg.source);
+			data = await loadExports(this.app, sources);
 		} catch (e) {
 			const msg =
 				e instanceof DataLoadError

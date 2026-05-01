@@ -30,6 +30,7 @@ export interface ExportShape {
 
 export interface BlockConfig {
 	source?: string;
+	sources?: string[];
 	zoom?: number;
 	center?: [number, number];
 	height?: number;

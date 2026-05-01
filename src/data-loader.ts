@@ -126,3 +126,20 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 
 	return parseJSONExport(raw, path);
 }
+
+export async function loadExports(app: App, sources: string[]): Promise<ExportShape> {
+	const all = await Promise.all(sources.map((s) => loadExport(app, s)));
+	const visits: Visit[] = [];
+	const points: LocationPoint[] = [];
+	let exportDate: string | undefined;
+	for (const e of all) {
+		if (e.visits) visits.push(...e.visits);
+		if (e.points) points.push(...e.points);
+		if (!exportDate && e.exportDate) exportDate = e.exportDate;
+	}
+	return {
+		visits: visits.length > 0 ? visits : null,
+		points: points.length > 0 ? points : null,
+		exportDate,
+	};
+}

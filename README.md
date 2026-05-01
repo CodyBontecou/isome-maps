@@ -29,6 +29,24 @@ title: April 2026 trip
 
 `source` is required and resolved relative to vault root. The file extension determines the parser (`.json`, `.csv`, `.md`/`.markdown`). All other keys are optional and override plugin settings. The plugin auto-detects whether the file contains visits, location points, or both.
 
+### Combining multiple files in one map
+
+iso.me's CSV and Markdown exports split visits and location points into separate files. To render both layers on a single map, use `sources:` with a list:
+
+````markdown
+```iso-me
+sources:
+  - exports/visits-2026-04.md
+  - exports/points-2026-04.md
+show_visits: true
+show_routes: true
+show_heatmap: false
+title: April 2026 trip
+```
+````
+
+Inline forms (`sources: [a.md, b.md]` or `sources: a.md, b.md`) work too. Visits and points from each file are merged; the map fits its bounds across everything. JSON exports already support a combined `{ visits, points }` shape, so a single `source:` is enough there.
+
 ## Supported iso.me export formats
 
 All three formats from the iso.me **Settings → Export** flow are accepted:
@@ -40,7 +58,7 @@ All three formats from the iso.me **Settings → Export** flow are accepted:
 
 **CSV** — auto-detected by header row:
 - Visits: `arrived_at,departed_at[,duration_minutes][,latitude,longitude][,location_name][,address][,notes]`
-- Points: `timestamp,timestamp_unix,latitude,longitude[,altitude][,speed][,horizontal_accuracy][,is_outlier]` (rows with `is_outlier=true` are skipped)
+- Points: `timestamp,timestamp_unix,latitude,longitude[,altitude][,speed][,horizontal_accuracy][,is_outlier]`
 
 For visits CSV the `latitude` / `longitude` columns must be present (enable "Coordinates" in the iso.me export options) — without coordinates, visits cannot be plotted.
 
