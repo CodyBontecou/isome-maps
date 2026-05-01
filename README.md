@@ -11,6 +11,8 @@ Drop a JSON, CSV, or Markdown export from iso.me into your vault, then reference
 - **Heatmap** — optional density overlay over the GPS points.
 - **GPS glitches** — points iso.me has flagged as outliers, optionally rendered as small scatter dots. Hidden by default; the route polyline and heatmap always exclude them so they don't skew the track.
 
+Pick a basemap (CartoDB Voyager/Positron/Dark Matter, OpenTopoMap, Esri satellite, or a custom URL) from the plugin's settings tab.
+
 ## Usage
 
 ````markdown

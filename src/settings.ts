@@ -1,7 +1,76 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type IsoMeMapsPlugin from "./main";
 
+export type TileProviderId =
+	| "carto-voyager"
+	| "carto-positron"
+	| "carto-dark-matter"
+	| "opentopomap"
+	| "esri-world-imagery"
+	| "osm"
+	| "custom";
+
+export interface TileProviderPreset {
+	id: TileProviderId;
+	label: string;
+	url: string;
+	attribution: string;
+	note?: string;
+}
+
+const OSM_ATTR =
+	'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const CARTO_ATTR = `${OSM_ATTR} &copy; <a href="https://carto.com/attributions">CARTO</a>`;
+
+export const TILE_PROVIDERS: TileProviderPreset[] = [
+	{
+		id: "carto-voyager",
+		label: "CartoDB Voyager (default)",
+		url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+		attribution: CARTO_ATTR,
+	},
+	{
+		id: "carto-positron",
+		label: "CartoDB Positron (light)",
+		url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+		attribution: CARTO_ATTR,
+	},
+	{
+		id: "carto-dark-matter",
+		label: "CartoDB Dark Matter (dark)",
+		url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+		attribution: CARTO_ATTR,
+	},
+	{
+		id: "opentopomap",
+		label: "OpenTopoMap (topographic)",
+		url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+		attribution: `${OSM_ATTR}, <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)`,
+	},
+	{
+		id: "esri-world-imagery",
+		label: "Esri World Imagery (satellite)",
+		url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+		attribution:
+			"Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+	},
+	{
+		id: "osm",
+		label: "OpenStreetMap (mobile only — desktop is blocked)",
+		url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+		attribution: OSM_ATTR,
+		note: "OSM's tile servers reject requests from desktop Obsidian (Electron referer policy). Works on the mobile app.",
+	},
+	{
+		id: "custom",
+		label: "Custom (enter URL and attribution below)",
+		url: "",
+		attribution: "",
+	},
+];
+
 export interface IsoMeSettings {
+	tileProvider: TileProviderId;
 	tileUrl: string;
 	tileAttribution: string;
 	defaultHeight: number;
@@ -23,10 +92,12 @@ export interface IsoMeSettings {
 // to CartoDB Voyager (OSM-styled, no referer requirement, free attribution use).
 export const LEGACY_OSM_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
+const DEFAULT_PROVIDER = TILE_PROVIDERS[0];
+
 export const DEFAULT_SETTINGS: IsoMeSettings = {
-	tileUrl: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-	tileAttribution:
-		'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+	tileProvider: DEFAULT_PROVIDER.id,
+	tileUrl: DEFAULT_PROVIDER.url,
+	tileAttribution: DEFAULT_PROVIDER.attribution,
 	defaultHeight: 400,
 	defaultCenter: [0, 0],
 	defaultZoom: 11,
@@ -41,6 +112,14 @@ export const DEFAULT_SETTINGS: IsoMeSettings = {
 	showOutliersByDefault: false,
 };
 
+export function findProviderByUrl(url: string): TileProviderPreset | undefined {
+	return TILE_PROVIDERS.find((p) => p.id !== "custom" && p.url === url);
+}
+
+export function getProvider(id: TileProviderId): TileProviderPreset {
+	return TILE_PROVIDERS.find((p) => p.id === id) ?? DEFAULT_PROVIDER;
+}
+
 export class IsoMeSettingTab extends PluginSettingTab {
 	constructor(app: App, private plugin: IsoMeMapsPlugin) {
 		super(app, plugin);
@@ -50,29 +129,58 @@ export class IsoMeSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		new Setting(containerEl)
-			.setName("Tile layer URL")
-			.setDesc("Leaflet tile URL template. Default is OpenStreetMap.")
-			.addText((t) =>
-				t
-					.setValue(this.plugin.settings.tileUrl)
-					.onChange(async (v) => {
-						this.plugin.settings.tileUrl = v.trim() || DEFAULT_SETTINGS.tileUrl;
-						await this.plugin.saveSettings();
-					}),
-			);
+		const providerSetting = new Setting(containerEl)
+			.setName("Tile provider")
+			.setDesc("Pick a basemap. Choose Custom to use your own tile URL.")
+			.addDropdown((dd) => {
+				for (const p of TILE_PROVIDERS) dd.addOption(p.id, p.label);
+				dd.setValue(this.plugin.settings.tileProvider).onChange(async (v) => {
+					const id = v as TileProviderId;
+					this.plugin.settings.tileProvider = id;
+					if (id !== "custom") {
+						const preset = getProvider(id);
+						this.plugin.settings.tileUrl = preset.url;
+						this.plugin.settings.tileAttribution = preset.attribution;
+					}
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			});
 
-		new Setting(containerEl)
-			.setName("Tile attribution")
-			.setDesc("HTML attribution string shown in the bottom-right of the map.")
-			.addText((t) =>
-				t
-					.setValue(this.plugin.settings.tileAttribution)
-					.onChange(async (v) => {
-						this.plugin.settings.tileAttribution = v;
-						await this.plugin.saveSettings();
-					}),
-			);
+		const activeProvider = getProvider(this.plugin.settings.tileProvider);
+		if (activeProvider.note) {
+			providerSetting.descEl.createEl("div", {
+				text: activeProvider.note,
+				cls: "mod-warning",
+			});
+		}
+
+		if (this.plugin.settings.tileProvider === "custom") {
+			new Setting(containerEl)
+				.setName("Tile layer URL")
+				.setDesc("Leaflet tile URL template (e.g. https://.../{z}/{x}/{y}.png).")
+				.addText((t) =>
+					t
+						.setValue(this.plugin.settings.tileUrl)
+						.onChange(async (v) => {
+							this.plugin.settings.tileUrl =
+								v.trim() || DEFAULT_SETTINGS.tileUrl;
+							await this.plugin.saveSettings();
+						}),
+				);
+
+			new Setting(containerEl)
+				.setName("Tile attribution")
+				.setDesc("HTML attribution string shown in the bottom-right of the map.")
+				.addText((t) =>
+					t
+						.setValue(this.plugin.settings.tileAttribution)
+						.onChange(async (v) => {
+							this.plugin.settings.tileAttribution = v;
+							await this.plugin.saveSettings();
+						}),
+				);
+		}
 
 		new Setting(containerEl)
 			.setName("Default map height")
