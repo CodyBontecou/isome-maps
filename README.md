@@ -61,6 +61,38 @@ title: April 2026 trip
 
 Inline forms (`sources: [a.md, b.md]` or `sources: a.md, b.md`) work too. Visits and points from each file are merged; the map fits its bounds across everything. JSON exports already support a combined `{ visits, points }` shape, so a single `source:` is enough there.
 
+### One-file-per-day exports (folders + globs)
+
+iso.me's export screen has a **One file per day** toggle that produces a separate file for each calendar day in the range. To render a whole batch on one map, point `source:` (or any item under `sources:`) at:
+
+- A folder — every supported export inside is loaded:
+
+  ````markdown
+  ```iso-me
+  source: exports/april/
+  title: April 2026
+  ```
+  ````
+
+- A filename glob with `*` / `?` — matched files are loaded in alphabetical order (chronological if filenames start with the date):
+
+  ````markdown
+  ```iso-me
+  source: exports/iso.me*.json
+  title: All days
+  ```
+  ````
+
+  ````markdown
+  ```iso-me
+  sources:
+    - exports/iso.me*visits.md
+    - exports/iso.me*points.md
+  ```
+  ````
+
+Wildcards apply to the filename component only (the directory part must be literal). Files with non-export extensions are skipped automatically.
+
 ## Supported iso.me export formats
 
 All three formats from the iso.me **Settings → Export** flow are accepted:

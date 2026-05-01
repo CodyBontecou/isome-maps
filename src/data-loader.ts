@@ -95,6 +95,93 @@ function detectFormat(path: string): "json" | "csv" | "markdown" {
 	return "json";
 }
 
+const SUPPORTED_EXTENSIONS = [".json", ".csv", ".md", ".markdown"];
+
+function hasSupportedExtension(path: string): boolean {
+	const lower = path.toLowerCase();
+	return SUPPORTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+function splitDirAndName(path: string): { dir: string; name: string } {
+	const idx = path.lastIndexOf("/");
+	if (idx < 0) return { dir: "", name: path };
+	return { dir: path.slice(0, idx), name: path.slice(idx + 1) };
+}
+
+function globToRegExp(pattern: string): RegExp {
+	let out = "^";
+	for (let i = 0; i < pattern.length; i++) {
+		const ch = pattern[i]!;
+		if (ch === "*") out += "[^/]*";
+		else if (ch === "?") out += "[^/]";
+		else if (/[.+^${}()|[\]\\]/.test(ch)) out += `\\${ch}`;
+		else out += ch;
+	}
+	out += "$";
+	return new RegExp(out);
+}
+
+async function expandSource(app: App, source: string): Promise<string[]> {
+	const path = normalizePath(source);
+
+	// Filename glob (e.g. "exports/iso.me*.json"). We only support wildcards in
+	// the final path component — that's the per-day-export use case.
+	if (path.includes("*") || path.includes("?")) {
+		const { dir, name } = splitDirAndName(path);
+		if (name.includes("*") || name.includes("?")) {
+			let listing: { files: string[]; folders: string[] };
+			try {
+				listing = await app.vault.adapter.list(dir || "/");
+			} catch {
+				return [path];
+			}
+			const re = globToRegExp(name);
+			const matches = listing.files
+				.filter((p) => {
+					const tail = splitDirAndName(p).name;
+					return re.test(tail) && hasSupportedExtension(tail);
+				})
+				.sort();
+			return matches.length > 0 ? matches : [path];
+		}
+		return [path];
+	}
+
+	// Folder source: include every supported export inside.
+	let stat: { type: string } | null = null;
+	try {
+		stat = (await app.vault.adapter.stat(path)) as { type: string } | null;
+	} catch {
+		stat = null;
+	}
+	if (stat && stat.type === "folder") {
+		try {
+			const listing = await app.vault.adapter.list(path);
+			const matches = listing.files.filter(hasSupportedExtension).sort();
+			return matches.length > 0 ? matches : [path];
+		} catch {
+			return [path];
+		}
+	}
+
+	return [path];
+}
+
+async function expandSources(app: App, sources: string[]): Promise<string[]> {
+	const seen = new Set<string>();
+	const out: string[] = [];
+	for (const s of sources) {
+		const expanded = await expandSource(app, s);
+		for (const p of expanded) {
+			if (!seen.has(p)) {
+				seen.add(p);
+				out.push(p);
+			}
+		}
+	}
+	return out;
+}
+
 export async function loadExport(app: App, source: string): Promise<ExportShape> {
 	const path = normalizePath(source);
 	let raw: string;
@@ -128,7 +215,8 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 }
 
 export async function loadExports(app: App, sources: string[]): Promise<ExportShape> {
-	const all = await Promise.all(sources.map((s) => loadExport(app, s)));
+	const expanded = await expandSources(app, sources);
+	const all = await Promise.all(expanded.map((s) => loadExport(app, s)));
 	const visits: Visit[] = [];
 	const points: LocationPoint[] = [];
 	let exportDate: string | undefined;
