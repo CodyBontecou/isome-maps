@@ -69,7 +69,7 @@ export class MapRenderChild extends MarkdownRenderChild {
 
 		let data: ExportShape;
 		try {
-			data = await loadExports(this.app, sources);
+			data = await loadExports(this.app, sources, this.settings);
 		} catch (e) {
 			const msg =
 				e instanceof DataLoadError

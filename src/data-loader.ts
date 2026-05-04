@@ -1,7 +1,19 @@
 import { App, normalizePath } from "obsidian";
 import { CSVParseError, parseExportCSV } from "./csv-parser";
+import {
+	applyDateToPattern,
+	formatDate,
+	isDateKeyword,
+	resolveDateKeyword,
+} from "./date-resolver";
 import { MarkdownParseError, parseExportMarkdown } from "./markdown-parser";
 import { ExportShape, LocationPoint, Visit } from "./types";
+
+export interface SourceResolutionSettings {
+	exportsFolder?: string;
+	exportFilenamePattern?: string;
+	exportDateFormat?: string;
+}
 
 export class DataLoadError extends Error {
 	constructor(message: string, readonly source: string) {
@@ -214,8 +226,41 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 	return parseJSONExport(raw, path);
 }
 
-export async function loadExports(app: App, sources: string[]): Promise<ExportShape> {
-	const expanded = await expandSources(app, sources);
+export function preprocessSources(
+	sources: string[],
+	settings: SourceResolutionSettings = {},
+	now: Date = new Date(),
+): string[] {
+	const folder = (settings.exportsFolder ?? "").replace(/\/+$/, "");
+	const pattern = settings.exportFilenamePattern ?? "*{date}*";
+	const dateFormat = settings.exportDateFormat ?? "YYYY-MM-DD";
+	const out: string[] = [];
+	const join = (name: string) => (folder ? `${folder}/${name}` : name);
+	for (const raw of sources) {
+		const trimmed = raw.trim();
+		if (!trimmed) continue;
+		if (isDateKeyword(trimmed)) {
+			for (const date of resolveDateKeyword(trimmed, now)) {
+				out.push(join(applyDateToPattern(pattern, formatDate(date, dateFormat))));
+			}
+			continue;
+		}
+		if (folder && !trimmed.includes("/")) {
+			out.push(join(trimmed));
+			continue;
+		}
+		out.push(trimmed);
+	}
+	return out;
+}
+
+export async function loadExports(
+	app: App,
+	sources: string[],
+	settings: SourceResolutionSettings = {},
+): Promise<ExportShape> {
+	const resolved = preprocessSources(sources, settings);
+	const expanded = await expandSources(app, resolved);
 	const all = await Promise.all(expanded.map((s) => loadExport(app, s)));
 	const visits: Visit[] = [];
 	const points: LocationPoint[] = [];

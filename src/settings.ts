@@ -73,6 +73,9 @@ export interface IsoMeSettings {
 	tileProvider: TileProviderId;
 	tileUrl: string;
 	tileAttribution: string;
+	exportsFolder: string;
+	exportFilenamePattern: string;
+	exportDateFormat: string;
 	defaultHeight: number;
 	defaultCenter: [number, number];
 	defaultZoom: number;
@@ -98,6 +101,9 @@ export const DEFAULT_SETTINGS: IsoMeSettings = {
 	tileProvider: DEFAULT_PROVIDER.id,
 	tileUrl: DEFAULT_PROVIDER.url,
 	tileAttribution: DEFAULT_PROVIDER.attribution,
+	exportsFolder: "",
+	exportFilenamePattern: "*{date}*",
+	exportDateFormat: "YYYY-MM-DD",
 	defaultHeight: 400,
 	defaultCenter: [0, 0],
 	defaultZoom: 11,
@@ -184,6 +190,59 @@ export class IsoMeSettingTab extends PluginSettingTab {
 						}),
 				);
 		}
+
+		const exportsHeader = containerEl.createEl("h3", { text: "Exports" });
+		exportsHeader.addClass("iso-me-section-header");
+
+		new Setting(containerEl)
+			.setName("Exports folder")
+			.setDesc(
+				"Vault-relative folder holding your iso.me exports (e.g. `exports`). Bare `source:` filenames in code blocks are looked up here, and date keywords like `today` / `yesterday` search this folder.",
+			)
+			.addText((t) =>
+				t
+					.setPlaceholder("exports")
+					.setValue(this.plugin.settings.exportsFolder)
+					.onChange(async (v) => {
+						this.plugin.settings.exportsFolder = v.trim().replace(/\/+$/, "");
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Export filename pattern")
+			.setDesc(
+				"Glob template used to find an export by date. `{date}` is replaced with the resolved date (formatted using the date format below). `*` and `?` work as wildcards. Default `*{date}*` matches any iso.me export filename containing the date.",
+			)
+			.addText((t) =>
+				t
+					.setPlaceholder("*{date}*")
+					.setValue(this.plugin.settings.exportFilenamePattern)
+					.onChange(async (v) => {
+						this.plugin.settings.exportFilenamePattern =
+							v.trim() || DEFAULT_SETTINGS.exportFilenamePattern;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Export date format")
+			.setDesc(
+				"How dates are spelled in your export filenames. Tokens: `YYYY`, `MM`, `DD`. Default `YYYY-MM-DD` matches iso.me's built-in export naming.",
+			)
+			.addText((t) =>
+				t
+					.setPlaceholder("YYYY-MM-DD")
+					.setValue(this.plugin.settings.exportDateFormat)
+					.onChange(async (v) => {
+						this.plugin.settings.exportDateFormat =
+							v.trim() || DEFAULT_SETTINGS.exportDateFormat;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		const mapHeader = containerEl.createEl("h3", { text: "Map defaults" });
+		mapHeader.addClass("iso-me-section-header");
 
 		new Setting(containerEl)
 			.setName("Default map height")

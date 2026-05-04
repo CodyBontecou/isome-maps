@@ -31,6 +31,29 @@ title: April 2026 trip
 
 `source` is required and resolved relative to vault root. The file extension determines the parser (`.json`, `.csv`, `.md`/`.markdown`). All other keys are optional and override plugin settings. The plugin auto-detects whether the file contains visits, location points, or both.
 
+### Exports folder + date keywords
+
+Set an **Exports folder** in the plugin's settings tab (e.g. `exports`) and `source:` values without a slash are looked up inside it. You can also use date keywords that resolve to the matching export file in that folder:
+
+````markdown
+```iso-me
+source: yesterday
+title: Where I went yesterday
+```
+````
+
+Supported keywords:
+
+- `today`
+- `yesterday`
+- `YYYY-MM-DD` — a specific date (e.g. `2026-05-01`)
+- `last 7 days`, `last 30 days`, etc.
+- `last week` (alias for `last 7 days`)
+
+Each keyword is converted into a glob using the **Export filename pattern** setting (default `*{date}*`, where `{date}` is replaced with the resolved date) and the **Export date format** setting (default `YYYY-MM-DD`, with `YYYY` / `MM` / `DD` tokens). With the defaults, `source: yesterday` matches any file in the exports folder containing yesterday's `YYYY-MM-DD` — which works for both iso.me's per-day filenames (`iso.me - Friday 2026-05-01 - all.json`) and the timestamped full export (`isome_complete_export_2026-05-01_121042.json`). If iso.me's filename format changes, tune the pattern (e.g. `iso.me*{date}*all*` to match only the combined per-day file).
+
+This combines naturally with [daily notes](https://help.obsidian.md/plugins/daily-notes): drop a `source: yesterday` block in your daily-note template and the map renders the previous day's data automatically.
+
 ### Interactive filters
 
 Set `interactive: true` to render a control bar above the map with a day picker (each day in the export plus "All days") and a time-of-day range slider. Changing either re-renders the visit, route, heatmap, and outlier layers in place and auto-fits the map to the new selection.
