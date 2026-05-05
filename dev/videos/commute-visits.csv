@@ -1,6 +1,0 @@
-arrived_at,departed_at,duration_minutes,latitude,longitude,location_name,address,notes
-2026-05-04T08:12:00.000Z,2026-05-04T09:45:00.000Z,93,37.7749,-122.4194,"Blue Bottle Coffee","315 Linden St, San Francisco, CA 94102","Morning espresso and laptop work."
-2026-05-04T10:15:00.000Z,2026-05-04T17:30:00.000Z,435,37.7857,-122.4011,Office,"303 2nd St, San Francisco, CA 94107","Sprint planning and two code reviews."
-2026-05-04T12:05:00.000Z,2026-05-04T12:55:00.000Z,50,37.7865,-122.4082,"The Bird","115 New Montgomery St, San Francisco, CA 94105","Spicy chicken sandwich. Great crinkle-cut fries."
-2026-05-04T18:10:00.000Z,2026-05-04T19:30:00.000Z,80,37.7671,-122.4294,"Bi-Rite Market","3639 18th St, San Francisco, CA 94110","Picked up groceries — the salted caramel ice cream was restocked."
-2026-05-04T18:30:00.000Z,2026-05-04T18:35:00.000Z,5,37.7694,-122.4278,"Dolores Park","Dolores St & 19th St, San Francisco, CA 94114","Quick walk through the park on the way home."
