@@ -1,0 +1,55 @@
+{
+  "exportDate": "2026-05-04T21:30:00.000Z",
+  "visits": [
+    {
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "arrivedAt": "2026-05-04T08:12:00.000Z",
+      "departedAt": "2026-05-04T09:45:00.000Z",
+      "durationMinutes": 93,
+      "locationName": "Blue Bottle Coffee",
+      "address": "315 Linden St, San Francisco, CA 94102",
+      "notes": "Morning espresso and laptop work. Barista remembered my order."
+    },
+    {
+      "latitude": 37.7857,
+      "longitude": -122.4011,
+      "arrivedAt": "2026-05-04T10:15:00.000Z",
+      "departedAt": "2026-05-04T17:30:00.000Z",
+      "durationMinutes": 435,
+      "locationName": "Office",
+      "address": "303 2nd St, San Francisco, CA 94107",
+      "notes": "Sprint planning and two code reviews."
+    },
+    {
+      "latitude": 37.7865,
+      "longitude": -122.4082,
+      "arrivedAt": "2026-05-04T12:05:00.000Z",
+      "departedAt": "2026-05-04T12:55:00.000Z",
+      "durationMinutes": 50,
+      "locationName": "The Bird",
+      "address": "115 New Montgomery St, San Francisco, CA 94105",
+      "notes": "Spicy chicken sandwich. Great crinkle-cut fries."
+    },
+    {
+      "latitude": 37.7671,
+      "longitude": -122.4294,
+      "arrivedAt": "2026-05-04T18:10:00.000Z",
+      "departedAt": "2026-05-04T19:30:00.000Z",
+      "durationMinutes": 80,
+      "locationName": "Bi-Rite Market",
+      "address": "3639 18th St, San Francisco, CA 94110",
+      "notes": "Picked up groceries — the salted caramel ice cream was restocked."
+    },
+    {
+      "latitude": 37.7694,
+      "longitude": -122.4278,
+      "arrivedAt": "2026-05-04T18:30:00.000Z",
+      "departedAt": "2026-05-04T18:35:00.000Z",
+      "durationMinutes": 5,
+      "locationName": "Dolores Park",
+      "address": "Dolores St & 19th St, San Francisco, CA 94114",
+      "notes": "Quick walk through the park on the way home."
+    }
+  ]
+}

@@ -1,4 +1,5 @@
-import { ExportShape } from "../types";
+import { DetectedFormat, ExportShape } from "../types";
+import { formatClass, formatLabel } from "./stats-bar";
 
 export interface FilterState {
 	day: string | null;
@@ -69,7 +70,7 @@ export function filterData(data: ExportShape, filter: FilterState): ExportShape 
 
 	const visits = data.visits ? data.visits.filter((v) => matches(v.arrivedAt)) : null;
 	const points = data.points ? data.points.filter((p) => matches(p.timestamp)) : null;
-	return { visits, points, exportDate: data.exportDate };
+	return { visits, points, exportDate: data.exportDate, detectedFormat: data.detectedFormat };
 }
 
 export function buildControls(
@@ -77,9 +78,16 @@ export function buildControls(
 	days: string[],
 	initial: FilterState,
 	onChange: (state: FilterState) => void,
+	detectedFormat?: DetectedFormat,
 ): HTMLElement {
 	const el = parent.createDiv({ cls: "iso-me-controls" });
 	const state: FilterState = { ...initial };
+
+	// Format badge
+	if (detectedFormat) {
+		const badge = el.createSpan({ cls: `iso-me-format-badge ${formatClass(detectedFormat)}` });
+		badge.textContent = formatLabel(detectedFormat);
+	}
 
 	const dayWrap = el.createDiv({ cls: "iso-me-control" });
 	dayWrap.createEl("label", { text: "Day", cls: "iso-me-control-label" });

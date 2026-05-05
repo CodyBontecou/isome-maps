@@ -13,6 +13,7 @@ import {
 import { renderHeatLayer } from "./heatmap";
 import { renderOutlierMarkers } from "./outliers";
 import { renderRoutePolyline } from "./routes";
+import { computeStats, renderStatsBar } from "./stats-bar";
 import { renderVisitMarkers } from "./visits";
 
 export class MapRenderChild extends MarkdownRenderChild {
@@ -94,8 +95,12 @@ export class MapRenderChild extends MarkdownRenderChild {
 			buildControls(this.containerEl, days, this.filter, (state) => {
 				this.filter = state;
 				this.applyFilter();
-			});
+			}, data.detectedFormat);
 		}
+
+		// Render stats bar above the map
+		const stats = computeStats(data);
+		renderStatsBar(this.containerEl, stats);
 
 		const mapEl = this.containerEl.createDiv({ cls: "iso-me-map" });
 		mapEl.style.height = `${this.cfg.height ?? this.settings.defaultHeight}px`;

@@ -22,10 +22,15 @@ export interface LocationPoint {
 	isOutlier?: boolean;
 }
 
+/** The detected format of an export file. */
+export type DetectedFormat = "iso-me-json" | "iso-me-csv" | "iso-me-markdown" | "owntracks" | "overland" | "gpx" | "unknown-json";
+
 export interface ExportShape {
 	visits: Visit[] | null;
 	points: LocationPoint[] | null;
 	exportDate?: string;
+	/** The detected export format. Used by the UI to show format badges and stats. */
+	detectedFormat?: DetectedFormat;
 }
 
 export interface BlockConfig {

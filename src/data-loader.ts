@@ -6,8 +6,11 @@ import {
 	isDateKeyword,
 	resolveDateKeyword,
 } from "./date-resolver";
+import { GPXParseError, parseGPX } from "./gpx-parser";
 import { MarkdownParseError, parseExportMarkdown } from "./markdown-parser";
-import { ExportShape, LocationPoint, Visit } from "./types";
+import { isOverlandJSON, parseOverland } from "./overland-parser";
+import { isOwnTracksJSON, parseOwnTracks } from "./owntracks-parser";
+import { DetectedFormat, ExportShape, LocationPoint, Visit } from "./types";
 
 export interface SourceResolutionSettings {
 	exportsFolder?: string;
@@ -75,13 +78,22 @@ function parseJSONExport(raw: string, path: string): ExportShape {
 		throw new DataLoadError("Export must be a JSON object", path);
 	}
 
+	// Format sniffing: OwnTracks, Overland, or standard iso.me JSON
+	if (isOwnTracksJSON(parsed)) {
+		return { ...parseOwnTracks(parsed as unknown[]), detectedFormat: "owntracks" };
+	}
+
+	if (isOverlandJSON(parsed)) {
+		return { ...parseOverland(parsed as Record<string, unknown>), detectedFormat: "overland" };
+	}
+
 	const root = parsed as Record<string, unknown>;
 	const visitsRaw = Array.isArray(root.visits) ? root.visits : null;
 	const pointsRaw = Array.isArray(root.points) ? root.points : null;
 
 	if (!visitsRaw && !pointsRaw) {
 		throw new DataLoadError(
-			"Export contains neither `visits` nor `points` arrays",
+			"Export contains neither `visits` nor `points` arrays, and does not match OwnTracks or Overland format.",
 			path,
 		);
 	}
@@ -97,17 +109,19 @@ function parseJSONExport(raw: string, path: string): ExportShape {
 		visits,
 		points,
 		exportDate: typeof root.exportDate === "string" ? root.exportDate : undefined,
+		detectedFormat: "iso-me-json",
 	};
 }
 
-function detectFormat(path: string): "json" | "csv" | "markdown" {
+function detectFormat(path: string): "gpx" | "json" | "csv" | "markdown" {
 	const lower = path.toLowerCase();
+	if (lower.endsWith(".gpx")) return "gpx";
 	if (lower.endsWith(".csv")) return "csv";
 	if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "markdown";
 	return "json";
 }
 
-const SUPPORTED_EXTENSIONS = [".json", ".csv", ".md", ".markdown"];
+const SUPPORTED_EXTENSIONS = [".json", ".csv", ".md", ".markdown", ".gpx"];
 
 function hasSupportedExtension(path: string): boolean {
 	const lower = path.toLowerCase();
@@ -205,9 +219,20 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 
 	const format = detectFormat(path);
 
+	if (format === "gpx") {
+		try {
+			const shape = parseGPX(raw);
+			return { ...shape, detectedFormat: "gpx" as DetectedFormat };
+		} catch (e) {
+			const msg = e instanceof GPXParseError || e instanceof Error ? e.message : String(e);
+			throw new DataLoadError(`Invalid GPX: ${msg}`, path);
+		}
+	}
+
 	if (format === "csv") {
 		try {
-			return parseExportCSV(raw);
+			const shape = parseExportCSV(raw);
+			return { ...shape, detectedFormat: "iso-me-csv" as DetectedFormat };
 		} catch (e) {
 			const msg = e instanceof CSVParseError || e instanceof Error ? e.message : String(e);
 			throw new DataLoadError(`Invalid CSV: ${msg}`, path);
@@ -216,7 +241,8 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 
 	if (format === "markdown") {
 		try {
-			return parseExportMarkdown(raw);
+			const shape = parseExportMarkdown(raw);
+			return { ...shape, detectedFormat: "iso-me-markdown" as DetectedFormat };
 		} catch (e) {
 			const msg = e instanceof MarkdownParseError || e instanceof Error ? e.message : String(e);
 			throw new DataLoadError(`Invalid Markdown: ${msg}`, path);
@@ -265,14 +291,30 @@ export async function loadExports(
 	const visits: Visit[] = [];
 	const points: LocationPoint[] = [];
 	let exportDate: string | undefined;
+	const detectedFormats: DetectedFormat[] = [];
 	for (const e of all) {
 		if (e.visits) visits.push(...e.visits);
 		if (e.points) points.push(...e.points);
 		if (!exportDate && e.exportDate) exportDate = e.exportDate;
+		if (e.detectedFormat && !detectedFormats.includes(e.detectedFormat)) {
+			detectedFormats.push(e.detectedFormat);
+		}
 	}
+	// Determine the canonical detected format for the combined shape.
+	// Priority: if there's just one, use it; otherwise pick the richest.
+	const resolvedFormat: DetectedFormat | undefined =
+		detectedFormats.length === 1
+			? detectedFormats[0]
+			: detectedFormats.length > 0
+				? (detectedFormats.includes("iso-me-json") ? "iso-me-json" :
+					 detectedFormats.includes("iso-me-csv") ? "iso-me-csv" :
+					 detectedFormats.includes("iso-me-markdown") ? "iso-me-markdown" :
+					 detectedFormats[0])
+				: undefined;
 	return {
 		visits: visits.length > 0 ? visits : null,
 		points: points.length > 0 ? points : null,
 		exportDate,
+		detectedFormat: resolvedFormat,
 	};
 }

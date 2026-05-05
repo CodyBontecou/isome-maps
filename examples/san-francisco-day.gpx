@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="iso.me"
+     xmlns="http://www.topografix.com/GPX/1/1"
+     xmlns:isome="https://isome.isolated.tech/gpx/1.0">
+  <metadata>
+    <name>iso.me export</name>
+    <time>2026-05-04T21:30:00.000Z</time>
+  </metadata>
+
+  <!-- === Visits as waypoints === -->
+  <wpt lat="37.7749" lon="-122.4194">
+    <time>2026-05-04T08:12:00.000Z</time>
+    <name>Blue Bottle Coffee</name>
+    <desc>315 Linden St, San Francisco, CA 94102</desc>
+    <extensions>
+      <isome:departedAt>2026-05-04T09:45:00.000Z</isome:departedAt>
+      <isome:durationMinutes>93.00</isome:durationMinutes>
+    </extensions>
+  </wpt>
+
+  <wpt lat="37.7857" lon="-122.4011">
+    <time>2026-05-04T10:15:00.000Z</time>
+    <name>Office</name>
+    <desc>303 2nd St, San Francisco, CA 94107</desc>
+    <extensions>
+      <isome:departedAt>2026-05-04T17:30:00.000Z</isome:departedAt>
+      <isome:durationMinutes>435.00</isome:durationMinutes>
+    </extensions>
+  </wpt>
+
+  <wpt lat="37.7865" lon="-122.4082">
+    <time>2026-05-04T12:05:00.000Z</time>
+    <name>The Bird</name>
+    <desc>115 New Montgomery St, San Francisco, CA 94105</desc>
+    <extensions>
+      <isome:departedAt>2026-05-04T12:55:00.000Z</isome:departedAt>
+      <isome:durationMinutes>50.00</isome:durationMinutes>
+    </extensions>
+  </wpt>
+
+  <wpt lat="37.7671" lon="-122.4294">
+    <time>2026-05-04T18:10:00.000Z</time>
+    <name>Bi-Rite Market</name>
+    <desc>3639 18th St, San Francisco, CA 94110</desc>
+    <extensions>
+      <isome:departedAt>2026-05-04T19:30:00.000Z</isome:departedAt>
+      <isome:durationMinutes>80.00</isome:durationMinutes>
+    </extensions>
+  </wpt>
+
+  <wpt lat="37.7694" lon="-122.4278">
+    <time>2026-05-04T18:30:00.000Z</time>
+    <name>Dolores Park</name>
+    <desc>Dolores St &amp; 19th St, San Francisco, CA 94114</desc>
+    <extensions>
+      <isome:departedAt>2026-05-04T18:35:00.000Z</isome:departedAt>
+      <isome:durationMinutes>5.00</isome:durationMinutes>
+    </extensions>
+  </wpt>
+
+  <!-- === Track: Morning commute === -->
+  <trk>
+    <name>Morning commute</name>
+    <trkseg>
+      <trkpt lat="37.7753" lon="-122.4189">
+        <ele>12.0</ele>
+        <time>2026-05-04T08:10:00.000Z</time>
+      </trkpt>
+      <trkpt lat="37.7751" lon="-122.4190">
+        <ele>12.0</ele>
+        <time>2026-05-04T08:11:00.000Z</time>
+        <extensions>
+          <isome:speed>1.20</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7749" lon="-122.4194">
+        <ele>12.5</ele>
+        <time>2026-05-04T08:12:20.000Z</time>
+        <extensions>
+          <isome:speed>0.30</isome:speed>
+          <isome:horizontalAccuracy>4.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+    </trkseg>
+
+    <!-- Walking to office -->
+    <trkseg>
+      <trkpt lat="37.7750" lon="-122.4188">
+        <ele>12.0</ele>
+        <time>2026-05-04T09:50:00.000Z</time>
+        <extensions>
+          <isome:speed>1.50</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7769" lon="-122.4139">
+        <ele>15.0</ele>
+        <time>2026-05-04T09:54:00.000Z</time>
+        <extensions>
+          <isome:speed>2.30</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7785" lon="-122.4108">
+        <ele>18.0</ele>
+        <time>2026-05-04T09:56:00.000Z</time>
+        <extensions>
+          <isome:speed>2.00</isome:speed>
+          <isome:horizontalAccuracy>8.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7802" lon="-122.4078">
+        <ele>20.0</ele>
+        <time>2026-05-04T09:58:00.000Z</time>
+        <extensions>
+          <isome:speed>2.10</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7820" lon="-122.4051">
+        <ele>22.0</ele>
+        <time>2026-05-04T10:00:00.000Z</time>
+        <extensions>
+          <isome:speed>1.90</isome:speed>
+          <isome:horizontalAccuracy>6.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7838" lon="-122.4035">
+        <ele>24.0</ele>
+        <time>2026-05-04T10:02:00.000Z</time>
+        <extensions>
+          <isome:speed>1.80</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7857" lon="-122.4011">
+        <ele>26.0</ele>
+        <time>2026-05-04T10:05:00.000Z</time>
+        <extensions>
+          <isome:speed>0.50</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+    </trkseg>
+
+    <!-- Walking home -->
+    <trkseg>
+      <trkpt lat="37.7848" lon="-122.4028">
+        <ele>24.0</ele>
+        <time>2026-05-04T17:35:00.000Z</time>
+        <extensions>
+          <isome:speed>1.60</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7825" lon="-122.4060">
+        <ele>20.0</ele>
+        <time>2026-05-04T17:38:00.000Z</time>
+        <extensions>
+          <isome:speed>2.00</isome:speed>
+          <isome:horizontalAccuracy>6.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7800" lon="-122.4091">
+        <ele>18.0</ele>
+        <time>2026-05-04T17:41:00.000Z</time>
+        <extensions>
+          <isome:speed>2.20</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7735" lon="-122.4182">
+        <ele>13.0</ele>
+        <time>2026-05-04T17:47:00.000Z</time>
+        <extensions>
+          <isome:speed>2.10</isome:speed>
+          <isome:horizontalAccuracy>8.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7671" lon="-122.4294">
+        <ele>8.0</ele>
+        <time>2026-05-04T18:05:00.000Z</time>
+        <extensions>
+          <isome:speed>0.20</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7694" lon="-122.4278">
+        <ele>8.0</ele>
+        <time>2026-05-04T19:36:00.000Z</time>
+        <extensions>
+          <isome:speed>1.30</isome:speed>
+          <isome:horizontalAccuracy>5.00</isome:horizontalAccuracy>
+        </extensions>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

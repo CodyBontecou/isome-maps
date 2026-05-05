@@ -1,8 +1,3 @@
-declare module "leaflet.heat" {
-	const _default: unknown;
-	export default _default;
-}
-
 import "leaflet";
 
 declare module "leaflet" {

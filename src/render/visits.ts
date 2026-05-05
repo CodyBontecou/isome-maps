@@ -25,6 +25,23 @@ function fmtDuration(minutes: number | null | undefined): string {
 	return rem === 0 ? `${hours}h` : `${hours}h ${rem}m`;
 }
 
+/** Map visit duration to circle radius: min 6px, max 22px. */
+function durationRadius(minutes: number | null | undefined): number {
+	if (minutes == null || !Number.isFinite(minutes) || minutes <= 0) return 8;
+	// Log scale so short stops are distinguishable but long stays don't dominate
+	const r = 5 + Math.log2(minutes + 1) * 3;
+	return Math.min(Math.max(r, 6), 22);
+}
+
+/** Assign a fill opacity based on duration — longer stays = more opaque. */
+function durationOpacity(minutes: number | null | undefined): number {
+	if (minutes == null || !Number.isFinite(minutes)) return 0.6;
+	if (minutes <= 5) return 0.5;
+	if (minutes <= 30) return 0.65;
+	if (minutes <= 120) return 0.75;
+	return 0.9;
+}
+
 function buildPopup(visit: Visit): string {
 	const parts: string[] = [];
 	if (visit.locationName) {
@@ -36,9 +53,12 @@ function buildPopup(visit: Visit): string {
 	parts.push(
 		`<div class="iso-me-popup-times">${escapeHtml(fmtDateTime(visit.arrivedAt))} → ${escapeHtml(fmtDateTime(visit.departedAt))}</div>`,
 	);
-	parts.push(
-		`<div class="iso-me-popup-duration">Duration: ${escapeHtml(fmtDuration(visit.durationMinutes))}</div>`,
-	);
+	const dur = fmtDuration(visit.durationMinutes);
+	if (dur !== "—") {
+		parts.push(
+			`<div class="iso-me-popup-duration">Duration: ${escapeHtml(dur)}</div>`,
+		);
+	}
 	if (visit.notes) {
 		parts.push(`<div class="iso-me-popup-notes">${escapeHtml(visit.notes)}</div>`);
 	}
@@ -51,18 +71,62 @@ export function renderVisitMarkers(
 	color: string,
 ): L.LatLngTuple[] {
 	const bounds: L.LatLngTuple[] = [];
+
+	// Compute duration range for dynamic sizing
+	const durations = visits
+		.map((v) => v.durationMinutes)
+		.filter((d): d is number => d != null && Number.isFinite(d) && d > 0);
+	const minDur = durations.length > 0 ? Math.min(...durations) : 0;
+	const maxDur = durations.length > 0 ? Math.max(...durations) : 0;
+	const durRange = maxDur - minDur;
+
 	for (const v of visits) {
 		const latlng: L.LatLngTuple = [v.latitude, v.longitude];
+		const radius = durationRadius(v.durationMinutes);
+		const opacity = durationOpacity(v.durationMinutes);
+
+		// Thicker border for long stays when there's meaningful range
+		const weight = durRange > 30 && v.durationMinutes != null && v.durationMinutes > 60 ? 3 : 2;
+
 		L.circleMarker(latlng, {
-			radius: 8,
+			radius,
 			color,
 			fillColor: color,
-			fillOpacity: 0.85,
-			weight: 2,
+			fillOpacity: opacity,
+			weight,
 		})
 			.bindPopup(buildPopup(v))
 			.addTo(target);
 		bounds.push(latlng);
 	}
+
+	// Add a small inline legend below the map when visits have meaningful duration spread
+	if (maxDur > 30 && visits.length >= 2) {
+		const legendInfo: [number, string][] = [];
+		if (maxDur >= 480) legendInfo.push([durationRadius(480), "8h+"]);
+		if (maxDur >= 120) legendInfo.push([durationRadius(120), "2h"]);
+		legendInfo.push([durationRadius(15), "15m"]);
+		if (minDur <= 1) legendInfo.push([durationRadius(1), "<1m"]);
+
+		if (legendInfo.length > 0 && (target as unknown as { _map?: L.Map })._map) {
+			const map = (target as unknown as { _map: L.Map })._map;
+			const Legend = L.Control.extend({
+				options: { position: "bottomleft" },
+				onAdd: function () {
+					const div = L.DomUtil.create("div", "iso-me-duration-legend");
+					const html = legendInfo
+						.map(([r, label]) => {
+							const size = r * 2;
+							return `<div class="iso-me-legend-item"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${r}" cy="${r}" r="${r - 1}" fill="${color}" fill-opacity="0.6" stroke="${color}" stroke-width="1"/></svg><span>${label}</span></div>`;
+						})
+						.join("");
+					div.innerHTML = html;
+					return div;
+				},
+			});
+			new Legend().addTo(map);
+		}
+	}
+
 	return bounds;
 }

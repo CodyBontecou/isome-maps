@@ -4,12 +4,14 @@ Render Leaflet maps inline in your Obsidian notes from exports produced by the [
 
 ## What it does
 
-Drop a JSON, CSV, or Markdown export from iso.me into your vault, then reference it from any note with a fenced ` ```iso-me ` code block. The plugin reads the file and renders an interactive map with:
+Drop an export from iso.me into your vault, then reference it from any note with a fenced ` ```iso-me ` code block. The plugin reads the file and renders an interactive map with:
 
-- **Visit markers** — pins for each visit with a popup showing the location name, address, arrival/departure times, and duration.
-- **Route polylines** — connected GPS tracks with start (green) and end (red) markers.
+- **Visit markers** — duration-encoded circle markers (larger = longer stay) with a popup showing the location name, address, arrival/departure times, and duration.
+- **Route polylines** — connected GPS tracks with start (green) and end (red) markers, plus path/straight-line distance info.
 - **Heatmap** — optional density overlay over the GPS points.
-- **GPS glitches** — points iso.me has flagged as outliers, optionally rendered as small scatter dots. Hidden by default; the route polyline and heatmap always exclude them so they don't skew the track.
+- **GPS glitches** — points iso.me has flagged as outliers, optionally rendered as small scatter dots. Hidden by default; the route polyline and heatmap always exclude them.
+- **Stats bar** — summary statistics above the map: visit/point counts, total distance, average speed, date range, and top visited place.
+- **Format badge** — each map shows the detected export format (JSON, CSV, MD, OwnTracks, Overland, GPX).
 
 Pick a basemap (CartoDB Voyager/Positron/Dark Matter, OpenTopoMap, Esri satellite, or a custom URL) from the plugin's settings tab.
 
@@ -118,7 +120,9 @@ Wildcards apply to the filename component only (the directory part must be liter
 
 ## Supported iso.me export formats
 
-All three formats from the iso.me **Settings → Export** flow are accepted:
+All six export formats from iso.me are accepted:
+
+### iso.me native formats
 
 **JSON** — visits, points, or combined:
 - `{ exportDate, visits: [...] }`
@@ -136,6 +140,43 @@ For visits CSV the `latitude` / `longitude` columns must be present (enable "Coo
 - Points: `# iso.me Location Points Export` with `## <date>` day groups and `| Time | Lat | Lon | ... |` tables.
 
 Markdown parsing assumes the exported dates/times are in en-US format (e.g. `Friday, March 14, 2025` and `3:24 PM`), which matches the iso.me default. JSON and CSV are locale-independent.
+
+### Tracking protocol formats (v1.2+)
+
+These formats carry only GPS location points — no visit/stay data. The format is auto-detected by the structure of the JSON.
+
+**OwnTracks** (`.json`) — [OwnTracks protocol](https://owntracks.org/booklet/tech/json/):
+- Array of `{ _type: "location", lat, lon, tst, acc?, alt?, vel? }` objects
+- `vel` is km/h (converted to m/s internally)
+- `tst` is Unix seconds
+
+**Overland** (`.json`) — [Overland iOS](https://github.com/aaronpk/Overland-iOS) GeoJSON format:
+- `{ locations: [{ type: "Feature", geometry: { type: "Point", coordinates: [lon, lat] }, properties: { timestamp, altitude?, speed?, horizontal_accuracy? } }] }`
+- Coordinates use `[longitude, latitude]` ordering
+
+**GPX** (`.gpx`) — [GPS Exchange Format](https://www.topografix.com/GPX/1/1/) with iso.me extensions:
+- Visits rendered from `<wpt>` elements with custom `<isome:departedAt>` and `<isome:durationMinutes>` extensions
+- Location points rendered from `<trk>/<trkseg>/<trkpt>` elements with `<isome:speed>`, `<isome:horizontalAccuracy>`, and `<isome:isOutlier>` extensions
+- Combined GPX files with both waypoints and tracks are fully supported
+
+GPX parsing uses the browser's native `DOMParser` (available in both desktop and mobile Obsidian).
+
+## Examples
+
+The [`examples/`](examples/) directory contains sample export files for all six supported formats, plus a [`usage-examples.md`](examples/usage-examples.md) with ready-to-paste Obsidian code blocks:
+
+| File | Format | Contains |
+|------|--------|----------|
+| `san-francisco-combined.json` | iso.me JSON | Visits + points (combined) |
+| `san-francisco-visits.json` | iso.me JSON | Visits only |
+| `san-francisco-points.json` | iso.me JSON | Points only |
+| `commute-visits.csv` | CSV | Visits |
+| `commute-points.csv` | CSV | Points |
+| `san-francisco-visits.md` | Markdown | Visits |
+| `commute-points.md` | Markdown | Points |
+| `owntracks-commute.json` | OwnTracks | GPS points |
+| `overland-commute.json` | Overland | GPS points |
+| `san-francisco-day.gpx` | GPX | Waypoints + tracks |
 
 ## Development
 
