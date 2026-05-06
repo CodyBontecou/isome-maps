@@ -100,33 +100,5 @@ export function renderVisitMarkers(
 		bounds.push(latlng);
 	}
 
-	// Add a small inline legend below the map when visits have meaningful duration spread
-	if (maxDur > 30 && visits.length >= 2) {
-		const legendInfo: [number, string][] = [];
-		if (maxDur >= 480) legendInfo.push([durationRadius(480), "8h+"]);
-		if (maxDur >= 120) legendInfo.push([durationRadius(120), "2h"]);
-		legendInfo.push([durationRadius(15), "15m"]);
-		if (minDur <= 1) legendInfo.push([durationRadius(1), "<1m"]);
-
-		if (legendInfo.length > 0 && (target as unknown as { _map?: L.Map })._map) {
-			const map = (target as unknown as { _map: L.Map })._map;
-			const Legend = L.Control.extend({
-				options: { position: "bottomleft" },
-				onAdd: function () {
-					const div = L.DomUtil.create("div", "iso-me-duration-legend");
-					const html = legendInfo
-						.map(([r, label]) => {
-							const size = r * 2;
-							return `<div class="iso-me-legend-item"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${r}" cy="${r}" r="${r - 1}" fill="${color}" fill-opacity="0.6" stroke="${color}" stroke-width="1"/></svg><span>${label}</span></div>`;
-						})
-						.join("");
-					div.innerHTML = html;
-					return div;
-				},
-			});
-			new Legend().addTo(map);
-		}
-	}
-
 	return bounds;
 }

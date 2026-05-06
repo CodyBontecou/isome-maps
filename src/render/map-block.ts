@@ -98,9 +98,13 @@ export class MapRenderChild extends MarkdownRenderChild {
 			}, data.detectedFormat);
 		}
 
-		// Render stats bar above the map
-		const stats = computeStats(data);
-		renderStatsBar(this.containerEl, stats);
+		// Render stats bar above the map (non-critical — swallow errors gracefully)
+		try {
+			const stats = computeStats(data);
+			renderStatsBar(this.containerEl, stats);
+		} catch {
+			// Stats bar is best-effort; never block the map.
+		}
 
 		const mapEl = this.containerEl.createDiv({ cls: "iso-me-map" });
 		mapEl.style.height = `${this.cfg.height ?? this.settings.defaultHeight}px`;
@@ -132,69 +136,80 @@ export class MapRenderChild extends MarkdownRenderChild {
 		const target = this.dynamicLayers;
 		if (!map || !target || !this.fullData) return;
 
-		target.clearLayers();
+		try {
+			target.clearLayers();
 
-		const filtered = filterData(this.fullData, this.filter);
+			const filtered = filterData(this.fullData, this.filter);
 
-		const showVisits = this.cfg.show_visits ?? this.settings.showVisitsByDefault;
-		const showRoutes = this.cfg.show_routes ?? this.settings.showRoutesByDefault;
-		const showHeatmap = this.cfg.show_heatmap ?? this.settings.showHeatmapByDefault;
-		const showOutliers =
-			this.cfg.show_outliers ?? this.settings.showOutliersByDefault;
+			const showVisits = this.cfg.show_visits ?? this.settings.showVisitsByDefault;
+			const showRoutes = this.cfg.show_routes ?? this.settings.showRoutesByDefault;
+			const showHeatmap = this.cfg.show_heatmap ?? this.settings.showHeatmapByDefault;
+			const showOutliers =
+				this.cfg.show_outliers ?? this.settings.showOutliersByDefault;
 
-		const visits = showVisits && filtered.visits ? filtered.visits : [];
-		const allPoints = filtered.points ?? [];
-		const cleanPoints = allPoints.filter((p) => !p.isOutlier);
-		const outlierPoints = allPoints.filter((p) => p.isOutlier);
+			const visits = showVisits && filtered.visits ? filtered.visits : [];
+			const allPoints = filtered.points ?? [];
+			const cleanPoints = allPoints.filter((p) => !p.isOutlier);
+			const outlierPoints = allPoints.filter((p) => p.isOutlier);
 
-		const bounds: L.LatLngTuple[] = [];
+			const bounds: L.LatLngTuple[] = [];
 
-		if (visits.length > 0) {
-			bounds.push(...renderVisitMarkers(target, visits, this.settings.markerColor));
-		}
-
-		if (showRoutes && cleanPoints.length > 0) {
-			bounds.push(
-				...renderRoutePolyline(target, cleanPoints, this.settings.routeColor),
-			);
-		}
-
-		if (showHeatmap && cleanPoints.length > 0) {
-			renderHeatLayer(
-				target,
-				cleanPoints,
-				this.settings.heatRadius,
-				this.settings.heatBlur,
-			);
-			if (!showRoutes) {
-				for (const p of cleanPoints) bounds.push([p.latitude, p.longitude]);
+			if (visits.length > 0) {
+				bounds.push(...renderVisitMarkers(target, visits, this.settings.markerColor));
 			}
-		}
 
-		if (showOutliers && outlierPoints.length > 0) {
-			bounds.push(
-				...renderOutlierMarkers(target, outlierPoints, this.settings.outlierColor),
-			);
-		}
+			if (showRoutes && cleanPoints.length > 0) {
+				bounds.push(
+					...renderRoutePolyline(target, cleanPoints, this.settings.routeColor),
+				);
+			}
 
-		if (bounds.length === 0) {
+			if (showHeatmap && cleanPoints.length > 0) {
+				renderHeatLayer(
+					target,
+					cleanPoints,
+					this.settings.heatRadius,
+					this.settings.heatBlur,
+				);
+				if (!showRoutes) {
+					for (const p of cleanPoints) bounds.push([p.latitude, p.longitude]);
+				}
+			}
+
+			if (showOutliers && outlierPoints.length > 0) {
+				bounds.push(
+					...renderOutlierMarkers(target, outlierPoints, this.settings.outlierColor),
+				);
+			}
+
+			if (bounds.length === 0) {
+				if (!this.hasFitInitial) {
+					const center = this.cfg.center ?? this.settings.defaultCenter;
+					map.setView(center, this.cfg.zoom ?? this.settings.defaultZoom);
+					this.hasFitInitial = true;
+				}
+				return;
+			}
+
+			if (bounds.length === 1) {
+				map.setView(bounds[0]!, this.cfg.zoom ?? 14);
+			} else {
+				map.fitBounds(L.latLngBounds(bounds), { padding: [20, 20] });
+				if (!this.hasFitInitial && this.cfg.zoom != null) {
+					map.setZoom(this.cfg.zoom);
+				}
+			}
+			this.hasFitInitial = true;
+		} catch {
+			// Layer rendering is best-effort; show at least the basemap.
 			if (!this.hasFitInitial) {
-				const center = this.cfg.center ?? this.settings.defaultCenter;
-				map.setView(center, this.cfg.zoom ?? this.settings.defaultZoom);
+				map.setView(
+					this.cfg.center ?? this.settings.defaultCenter,
+					this.cfg.zoom ?? this.settings.defaultZoom,
+				);
 				this.hasFitInitial = true;
 			}
-			return;
 		}
-
-		if (bounds.length === 1) {
-			map.setView(bounds[0]!, this.cfg.zoom ?? 14);
-		} else {
-			map.fitBounds(L.latLngBounds(bounds), { padding: [20, 20] });
-			if (!this.hasFitInitial && this.cfg.zoom != null) {
-				map.setZoom(this.cfg.zoom);
-			}
-		}
-		this.hasFitInitial = true;
 	}
 
 	private renderError(message: string): void {
