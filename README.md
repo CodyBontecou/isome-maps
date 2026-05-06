@@ -1,5 +1,7 @@
 # iso.me Maps for Obsidian
 
+<img width="1602" height="1340" alt="CleanShot 2026-05-06 at 16 39 34@2x" src="https://github.com/user-attachments/assets/4fcbab78-9b71-45cb-8b00-e610400f1da1" />
+
 Render Leaflet maps inline in your Obsidian notes from exports produced by the [iso.me](https://apps.apple.com/us/app/iso-me/id6761960794) iOS app.
 
 ## What it does
