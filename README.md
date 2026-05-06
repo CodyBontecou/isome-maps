@@ -1,6 +1,6 @@
 # iso.me Maps for Obsidian
 
-Render Leaflet maps inline in your Obsidian notes from exports produced by the [iso.me](https://iso.me) iOS app.
+Render Leaflet maps inline in your Obsidian notes from exports produced by the [iso.me](https://apps.apple.com/us/app/iso-me/id6761960794) iOS app.
 
 ## What it does
 
