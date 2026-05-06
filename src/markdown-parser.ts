@@ -110,7 +110,7 @@ function flushVisit(draft: VisitDraft, visits: Visit[]): void {
 	});
 }
 
-function parseVisitsMarkdown(lines: string[]): Visit[] {
+function parseVisitsBullet(lines: string[]): Visit[] {
 	const visits: Visit[] = [];
 	let currentDate: DateParts | null = null;
 	let draft: VisitDraft | null = null;
@@ -183,6 +183,90 @@ function parseVisitsMarkdown(lines: string[]): Visit[] {
 
 	finishDraft();
 	return visits;
+}
+
+function parseVisitsTable(lines: string[]): Visit[] {
+	const visits: Visit[] = [];
+	let currentDate: DateParts | null = null;
+	let columns: Map<string, number> | null = null;
+
+	const cleanField = (s: string | undefined): string | null => {
+		if (!s) return null;
+		const t = s.trim();
+		return t === "" || t === "-" ? null : t;
+	};
+
+	for (const rawLine of lines) {
+		const line = rawLine.trimEnd();
+
+		if (line.startsWith("## ")) {
+			currentDate = parseDateHeading(line.slice(3).trim());
+			columns = null;
+			continue;
+		}
+
+		const cells = parseTableRow(line);
+		if (!cells) {
+			columns = null;
+			continue;
+		}
+
+		if (!columns) {
+			const lowered = cells.map((c) => c.toLowerCase());
+			if (
+				lowered.includes("arrived") &&
+				lowered.includes("lat") &&
+				lowered.includes("lon")
+			) {
+				columns = new Map();
+				lowered.forEach((c, idx) => columns!.set(c, idx));
+			}
+			continue;
+		}
+
+		if (isSeparatorRow(cells)) continue;
+		if (!currentDate) continue;
+
+		const idx = (key: string) => columns!.get(key);
+		const get = (k: string) =>
+			idx(k) !== undefined ? cells[idx(k)!] : undefined;
+
+		const arrived = parseTime(get("arrived") ?? "");
+		if (!arrived) continue;
+
+		const lat = stripUnit(get("lat") ?? "");
+		const lon = stripUnit(get("lon") ?? "");
+		if (lat === null || lon === null) continue;
+
+		const arrivedAt = combineToISO(currentDate, arrived);
+		if (!arrivedAt) continue;
+
+		const departedStr = cleanField(get("departed"));
+		const departed = departedStr ? parseTime(departedStr) : null;
+		const departedAt = departed ? combineToISO(currentDate, departed) : null;
+
+		const durationStr = cleanField(get("duration"));
+		const durationMinutes = durationStr ? parseDurationText(durationStr) : null;
+
+		visits.push({
+			latitude: lat,
+			longitude: lon,
+			arrivedAt,
+			departedAt,
+			durationMinutes,
+			locationName: cleanField(get("location")),
+			address: cleanField(get("address")),
+			notes: cleanField(get("notes")),
+		});
+	}
+
+	return visits;
+}
+
+function parseVisitsMarkdown(lines: string[]): Visit[] {
+	const bullet = parseVisitsBullet(lines);
+	if (bullet.length > 0) return bullet;
+	return parseVisitsTable(lines);
 }
 
 interface PointTableContext {
@@ -281,28 +365,58 @@ function parsePointsMarkdown(lines: string[]): LocationPoint[] {
 	return points;
 }
 
+type SectionKind = "visits" | "points" | "skip";
+
+function classifyH1(heading: string): SectionKind {
+	const h = heading.toLowerCase();
+	if (h.includes("location points")) return "points";
+	if (h.includes("complete export")) return "skip";
+	if (h === "visits" || h.includes("iso.me")) return "visits";
+	return "skip";
+}
+
 export function parseExportMarkdown(text: string): ExportShape {
 	const lines = text.split(/\r?\n/);
 
-	let kind: "visits" | "points" | null = null;
-	for (const line of lines) {
-		const t = line.trim();
-		if (t.startsWith("# ")) {
-			const h = t.slice(2).trim().toLowerCase();
-			if (h.includes("location points")) kind = "points";
-			else if (h.includes("iso.me")) kind = "visits";
-			break;
+	interface Section {
+		kind: SectionKind;
+		start: number;
+		end: number;
+	}
+	const sections: Section[] = [];
+	let cur: Section | null = null;
+
+	for (let i = 0; i < lines.length; i++) {
+		const t = lines[i]!.trim();
+		if (t.startsWith("# ") && !t.startsWith("## ")) {
+			if (cur) {
+				cur.end = i;
+				sections.push(cur);
+			}
+			cur = { kind: classifyH1(t.slice(2).trim()), start: i, end: lines.length };
+		}
+	}
+	if (cur) sections.push(cur);
+
+	let visits: Visit[] | null = null;
+	let points: LocationPoint[] | null = null;
+
+	for (const s of sections) {
+		const slice = lines.slice(s.start, s.end);
+		if (s.kind === "visits") {
+			const v = parseVisitsMarkdown(slice);
+			visits = visits === null ? v : visits.concat(v);
+		} else if (s.kind === "points") {
+			const p = parsePointsMarkdown(slice);
+			points = points === null ? p : points.concat(p);
 		}
 	}
 
-	if (kind === "visits") {
-		return { visits: parseVisitsMarkdown(lines), points: null };
-	}
-	if (kind === "points") {
-		return { visits: null, points: parsePointsMarkdown(lines) };
+	if (visits === null && points === null) {
+		throw new MarkdownParseError(
+			'Unrecognized markdown. Expected H1 "# iso.me Export", "# iso.me Location Points Export", or "# iso.me Complete Export".',
+		);
 	}
 
-	throw new MarkdownParseError(
-		'Unrecognized markdown. Expected H1 "# iso.me Export" or "# iso.me Location Points Export".',
-	);
+	return { visits, points };
 }
