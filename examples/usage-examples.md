@@ -167,6 +167,7 @@ interactive: true
 | `show_routes` | boolean | `true` | Show route polylines |
 | `show_heatmap` | boolean | `false` | Show heatmap overlay |
 | `show_outliers` | boolean | `false` | Show GPS glitch markers |
+| `show_stats` | boolean | `true` | Show the summary stats bar |
 | `interactive` | boolean | `false` | Show day/time filter controls |
 
 ---

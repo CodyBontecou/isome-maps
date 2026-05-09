@@ -5,6 +5,7 @@ const BOOL_KEYS = new Set([
 	"show_routes",
 	"show_heatmap",
 	"show_outliers",
+	"show_stats",
 	"interactive",
 ]);
 const NUMBER_KEYS = new Set(["zoom", "height"]);
@@ -95,6 +96,7 @@ export function parseBlockConfig(source: string): BlockConfig {
 				else if (key === "show_routes") cfg.show_routes = b;
 				else if (key === "show_heatmap") cfg.show_heatmap = b;
 				else if (key === "show_outliers") cfg.show_outliers = b;
+				else if (key === "show_stats") cfg.show_stats = b;
 				else if (key === "interactive") cfg.interactive = b;
 			}
 		}

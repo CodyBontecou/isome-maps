@@ -13,7 +13,7 @@ Drop an export from iso.me into your vault, then reference it from any note with
 - **Route polylines** — connected GPS tracks with start (green) and end (red) markers, plus path/straight-line distance info.
 - **Heatmap** — optional density overlay over the GPS points.
 - **GPS glitches** — points iso.me has flagged as outliers, optionally rendered as small scatter dots. Hidden by default; the route polyline and heatmap always exclude them.
-- **Stats bar** — summary statistics above the map: visit/point counts, total distance, average speed, date range, and top visited place.
+- **Stats bar** — summary statistics above the map: visit/point counts, total distance, average speed, date range, and top visited place. Hide per block with `show_stats: false`.
 - **Format badge** — each map shows the detected export format (JSON, CSV, MD, OwnTracks, Overland, GPX).
 
 Pick a basemap (CartoDB Voyager/Positron/Dark Matter, OpenTopoMap, Esri satellite, or a custom URL) from the plugin's settings tab.
@@ -30,6 +30,7 @@ show_visits: true
 show_routes: true
 show_heatmap: false
 show_outliers: false
+show_stats: true
 title: April 2026 trip
 ```
 ````

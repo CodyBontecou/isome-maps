@@ -98,12 +98,14 @@ export class MapRenderChild extends MarkdownRenderChild {
 			}, data.detectedFormat);
 		}
 
-		// Render stats bar above the map (non-critical — swallow errors gracefully)
-		try {
-			const stats = computeStats(data);
-			renderStatsBar(this.containerEl, stats);
-		} catch {
-			// Stats bar is best-effort; never block the map.
+		if (this.cfg.show_stats ?? true) {
+			// Render stats bar above the map (non-critical — swallow errors gracefully)
+			try {
+				const stats = computeStats(data);
+				renderStatsBar(this.containerEl, stats);
+			} catch {
+				// Stats bar is best-effort; never block the map.
+			}
 		}
 
 		const mapEl = this.containerEl.createDiv({ cls: "iso-me-map" });
