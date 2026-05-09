@@ -2,27 +2,149 @@
 
 <img width="500" alt="CleanShot 2026-05-06 at 16 40 20@2x" src="https://github.com/user-attachments/assets/afb51f1f-29c4-4c5a-b717-073010c55c8e" />
 
+Render interactive Leaflet maps inline in Obsidian notes from [iso.me](https://apps.apple.com/us/app/iso-me/id6761960794) exports and compatible location-tracking formats.
 
-Render Leaflet maps inline in your Obsidian notes from exports produced by the [iso.me](https://apps.apple.com/us/app/iso-me/id6761960794) iOS app.
+The plugin registers an Obsidian Markdown code block named `iso-me`. Add a fenced block to any note, point it at one or more export files in your vault, and the plugin renders visits, routes, heatmaps, outliers, stats, and optional interactive filters.
 
-## What it does
+---
 
-Drop an export from iso.me into your vault, then reference it from any note with a fenced ` ```iso-me ` code block. The plugin reads the file and renders an interactive map with:
+## Quick start
 
-- **Visit markers** — duration-encoded circle markers (larger = longer stay) with a popup showing the location name, address, arrival/departure times, and duration.
-- **Route polylines** — connected GPS tracks with start (green) and end (red) markers, plus path/straight-line distance info.
-- **Heatmap** — optional density overlay over the GPS points.
-- **GPS glitches** — points iso.me has flagged as outliers, optionally rendered as small scatter dots. Hidden by default; the route polyline and heatmap always exclude them.
-- **Stats bar** — summary statistics above the map: visit/point counts, total distance, average speed, date range, and top visited place. Hide per block with `show_stats: false`.
-- **Format badge** — each map shows the detected export format (JSON, CSV, MD, OwnTracks, Overland, GPX).
-
-Pick a basemap (CartoDB Voyager/Positron/Dark Matter, OpenTopoMap, Esri satellite, or a custom URL) from the plugin's settings tab.
-
-## Usage
+1. Install and enable **iso.me Maps** in Obsidian.
+2. Export data from the iso.me iOS app. JSON combined exports are the easiest starting point.
+3. Put the export in your vault, for example `exports/iso.me-2026-05-04.json`.
+4. Add this to any note:
 
 ````markdown
 ```iso-me
-source: exports/iso-export-2026-04.json
+source: exports/iso.me-2026-05-04.json
+title: Where I went
+height: 500
+show_visits: true
+show_routes: true
+```
+````
+
+`source` or `sources` is required. Every other block parameter is optional.
+
+---
+
+## What it renders
+
+- **Visit markers** — duration-encoded circle markers. Longer stays are larger and more opaque. Popups show place name, address, arrival/departure time, duration, and notes when available.
+- **Route polylines** — connected GPS tracks with green start marker, red end marker, and route popup showing path distance and straight-line distance.
+- **Heatmap overlay** — density visualization of clean GPS points.
+- **GPS glitch / outlier markers** — optional scatter markers for points flagged as outliers by iso.me. Outliers are hidden by default and are always excluded from routes and heatmaps.
+- **Stats bar** — export format badge, visit count, point count, distance, average speed, date range, and top repeated place.
+- **Interactive filters** — optional day selector and time-of-day range slider.
+
+Supported formats:
+
+- iso.me JSON
+- iso.me CSV
+- iso.me Markdown
+- OwnTracks JSON
+- Overland JSON / GeoJSON
+- GPX
+
+---
+
+## Setup guide
+
+### 1. Install the plugin
+
+#### From Obsidian Community Plugins
+
+If the plugin is available in Community Plugins:
+
+1. Open **Settings → Community plugins**.
+2. Disable **Restricted mode** if needed.
+3. Click **Browse**.
+4. Search for **iso.me Maps**.
+5. Click **Install**, then **Enable**.
+
+#### Manual install from a release
+
+1. Download these files from the latest release:
+   - `manifest.json`
+   - `main.js`
+   - `styles.css`
+2. In your vault, create this folder:
+
+   ```text
+   .obsidian/plugins/iso-me-maps/
+   ```
+
+3. Copy the three files into that folder.
+4. Restart Obsidian or run **Reload app without saving** from the command palette.
+5. Open **Settings → Community plugins** and enable **iso.me Maps**.
+
+#### Development install from this repository
+
+```bash
+npm install
+npm run build
+ln -s "$PWD" "<your-vault>/.obsidian/plugins/iso-me-maps"
+```
+
+Then reload Obsidian and enable the plugin.
+
+### 2. Export data from iso.me
+
+In the iso.me iOS app, export the data you want to map. Recommended options:
+
+- Use **JSON** for the simplest one-file workflow.
+- Use a combined export containing both **visits** and **points** when possible.
+- If exporting CSV or Markdown visits, enable **Coordinates** in iso.me export options. Visits without latitude/longitude cannot be plotted.
+- If using **One file per day**, place all generated files in a single vault folder and use a folder source, glob source, or date keyword.
+
+### 3. Put exports in your vault
+
+A common layout is:
+
+```text
+Your vault/
+  Daily Notes/
+  exports/
+    iso.me - Monday 2026-05-04 - all.json
+    iso.me - Tuesday 2026-05-05 - all.json
+```
+
+### 4. Configure plugin settings
+
+Open **Settings → iso.me Maps**.
+
+Recommended first-time settings:
+
+| Setting | Suggested value | Why |
+|---|---:|---|
+| **Exports folder** | `exports` | Lets you write `source: yesterday` or `source: filename.json` instead of full paths. |
+| **Export filename pattern** | `*{date}*` | Matches any file containing the resolved date. |
+| **Export date format** | `YYYY-MM-DD` | Matches iso.me's default date format in filenames. |
+| **Tile provider** | CartoDB Voyager | Works in desktop and mobile Obsidian. |
+
+### 5. Add a map block
+
+````markdown
+```iso-me
+source: yesterday
+title: Yesterday
+height: 500
+interactive: true
+```
+````
+
+With `exportsFolder = exports`, `source: yesterday` searches the `exports/` folder for a file matching yesterday's date.
+
+---
+
+## Complete code block parameter reference
+
+Use parameters inside a fenced `iso-me` code block:
+
+````markdown
+```iso-me
+source: exports/day.json
 height: 500
 zoom: 12
 center: [37.7749, -122.4194]
@@ -31,147 +153,748 @@ show_routes: true
 show_heatmap: false
 show_outliers: false
 show_stats: true
-title: April 2026 trip
+interactive: false
+title: April trip
 ```
 ````
 
-`source` is required and resolved relative to vault root. The file extension determines the parser (`.json`, `.csv`, `.md`/`.markdown`). All other keys are optional and override plugin settings. The plugin auto-detects whether the file contains visits, location points, or both.
+| Parameter | Type | Required | Default | Description |
+|---|---|---:|---|---|
+| `source` | path, folder, glob, or date keyword | Yes, unless `sources` is set | — | Loads one source. Can point to a supported file, a folder, a filename glob, or a date keyword such as `today`. |
+| `sources` | list of paths/folders/globs/date keywords | Yes, unless `source` is set | — | Loads multiple sources and merges them into one map. Useful for separate visits + points exports or one-file-per-day batches. |
+| `title` | string | No | none | Heading displayed above the map. Quotes are optional. |
+| `height` | number | No | plugin **Default map height** (`400`) | Map height in pixels. |
+| `zoom` | number | No | plugin **Default zoom** (`11`) | Initial/fallback zoom. If the export has multiple mappable coordinates, the map normally fits bounds; `zoom` can override the initial fit zoom. |
+| `center` | `[latitude, longitude]` | No | plugin default center (`[0, 0]`) | Initial/fallback center when no visible layer provides bounds. |
+| `show_visits` | boolean | No | plugin **Show visit markers by default** (`true`) | Shows visit/stay markers when the export contains visits. |
+| `show_routes` | boolean | No | plugin **Show routes by default** (`true`) | Shows GPS route polylines when the export contains points. Outliers are excluded. |
+| `show_heatmap` | boolean | No | plugin **Show heatmap by default** (`false`) | Shows a heatmap from clean GPS points. Outliers are excluded. |
+| `show_outliers` | boolean | No | plugin **Show GPS glitches by default** (`false`) | Shows points flagged as outliers / GPS glitches. |
+| `show_stats` | boolean | No | `true` | Shows the stats bar above the map. This is per-block only; there is no settings-tab default for stats. |
+| `interactive` | boolean | No | `false` | Shows day and time-of-day filters above the map. Filters re-render visits, routes, heatmap, and outliers. |
 
-### Exports folder + date keywords
+### Parameter syntax rules
 
-Set an **Exports folder** in the plugin's settings tab (e.g. `exports`) and `source:` values without a slash are looked up inside it. You can also use date keywords that resolve to the matching export file in that folder:
+- The code fence language must be exactly `iso-me`:
 
-````markdown
-```iso-me
-source: yesterday
-title: Where I went yesterday
-```
-````
+  ````markdown
+  ```iso-me
+  source: exports/day.json
+  ```
+  ````
 
-Supported keywords:
+- Keys are case-insensitive, but the documented lowercase names are recommended.
+- Blank lines are ignored.
+- Lines beginning with `#` are comments.
+- Unknown keys are ignored.
+- Malformed values are ignored and the plugin falls back to defaults.
+- Strings may be unquoted, single-quoted, or double-quoted:
 
-- `today`
-- `yesterday`
-- `YYYY-MM-DD` — a specific date (e.g. `2026-05-01`)
-- `last 7 days`, `last 30 days`, etc.
-- `last week` (alias for `last 7 days`)
+  ```yaml
+  title: My trip
+  title: "My trip"
+  title: 'My trip'
+  ```
 
-Each keyword is converted into a glob using the **Export filename pattern** setting (default `*{date}*`, where `{date}` is replaced with the resolved date) and the **Export date format** setting (default `YYYY-MM-DD`, with `YYYY` / `MM` / `DD` tokens). With the defaults, `source: yesterday` matches any file in the exports folder containing yesterday's `YYYY-MM-DD` — which works for both iso.me's per-day filenames (`iso.me - Friday 2026-05-01 - all.json`) and the timestamped full export (`isome_complete_export_2026-05-01_121042.json`). If iso.me's filename format changes, tune the pattern (e.g. `iso.me*{date}*all*` to match only the combined per-day file).
+- Boolean values accept all of these forms:
 
-This combines naturally with [daily notes](https://help.obsidian.md/plugins/daily-notes): drop a `source: yesterday` block in your daily-note template and the map renders the previous day's data automatically.
+  | True | False |
+  |---|---|
+  | `true` | `false` |
+  | `yes` | `no` |
+  | `on` | `off` |
+  | `1` | `0` |
 
-### Interactive filters
+- `center` must be bracketed latitude/longitude:
 
-Set `interactive: true` to render a control bar above the map with a day picker (each day in the export plus "All days") and a time-of-day range slider. Changing either re-renders the visit, route, heatmap, and outlier layers in place and auto-fits the map to the new selection.
+  ```yaml
+  center: [37.7749, -122.4194]
+  ```
 
-````markdown
-```iso-me
-source: exports/iso-export-2026-04.json
-interactive: true
-height: 500
-```
-````
+### `sources` syntax
 
-### Combining multiple files in one map
-
-iso.me's CSV and Markdown exports split visits and location points into separate files. To render both layers on a single map, use `sources:` with a list:
+Multi-line YAML-style list:
 
 ````markdown
 ```iso-me
 sources:
-  - exports/visits-2026-04.md
-  - exports/points-2026-04.md
-show_visits: true
-show_routes: true
-show_heatmap: false
-title: April 2026 trip
+  - exports/visits.md
+  - exports/points.md
 ```
 ````
 
-Inline forms (`sources: [a.md, b.md]` or `sources: a.md, b.md`) work too. Visits and points from each file are merged; the map fits its bounds across everything. JSON exports already support a combined `{ visits, points }` shape, so a single `source:` is enough there.
+Inline bracket list:
 
-### One-file-per-day exports (folders + globs)
+````markdown
+```iso-me
+sources: [exports/visits.md, exports/points.md]
+```
+````
 
-iso.me's export screen has a **One file per day** toggle that produces a separate file for each calendar day in the range. To render a whole batch on one map, point `source:` (or any item under `sources:`) at:
+Inline comma list:
 
-- A folder — every supported export inside is loaded:
+````markdown
+```iso-me
+sources: exports/visits.md, exports/points.md
+```
+````
 
-  ````markdown
-  ```iso-me
-  source: exports/april/
-  title: April 2026
-  ```
-  ````
+If both `source` and `sources` are present, all listed sources are loaded and merged.
 
-- A filename glob with `*` / `?` — matched files are loaded in alphabetical order (chronological if filenames start with the date):
+---
 
-  ````markdown
-  ```iso-me
-  source: exports/iso.me*.json
-  title: All days
-  ```
-  ````
+## Source resolution, date keywords, folders, and globs
 
-  ````markdown
-  ```iso-me
-  sources:
-    - exports/iso.me*visits.md
-    - exports/iso.me*points.md
-  ```
-  ````
+A source can be any of the following:
 
-Wildcards apply to the filename component only (the directory part must be literal). Files with non-export extensions are skipped automatically.
+| Source form | Example | What happens |
+|---|---|---|
+| File path | `source: exports/day.json` | Loads that vault-relative file. |
+| Bare filename | `source: day.json` | If **Exports folder** is set, loads `exports/day.json`; otherwise loads from the vault root. |
+| Folder | `source: exports/may/` | Loads every supported export file inside that folder. |
+| Glob | `source: exports/iso.me*.json` | Loads every supported file in the literal directory whose filename matches the glob. |
+| Date keyword | `source: yesterday` | Resolves to one or more date-based glob searches using the settings below. |
 
-## Supported iso.me export formats
+Supported file extensions are:
 
-All six export formats from iso.me are accepted:
+```text
+.json, .csv, .md, .markdown, .gpx
+```
 
-### iso.me native formats
+### Date keywords
 
-**JSON** — visits, points, or combined:
-- `{ exportDate, visits: [...] }`
-- `{ exportDate, points: [...] }`
-- `{ visits: [...], points: [...] }`
+Date keywords are available in `source` and in each item under `sources`.
 
-**CSV** — auto-detected by header row:
-- Visits: `arrived_at,departed_at[,duration_minutes][,latitude,longitude][,location_name][,address][,notes]`
-- Points: `timestamp,timestamp_unix,latitude,longitude[,altitude][,speed][,horizontal_accuracy][,is_outlier]`
+| Keyword | Meaning |
+|---|---|
+| `today` | Today's date. |
+| `yesterday` | Yesterday's date. |
+| `YYYY-MM-DD` | A specific date, for example `2026-05-04`. |
+| `last N days` | Today plus the previous `N - 1` days. `N` is clamped to `1...366`. Examples: `last 7 days`, `last 30 days`, `last 365 days`. |
+| `last week` | Alias for `last 7 days`. |
 
-For visits CSV the `latitude` / `longitude` columns must be present (enable "Coordinates" in the iso.me export options) — without coordinates, visits cannot be plotted.
+Examples:
 
-**Markdown** — auto-detected by H1:
-- Visits: `# iso.me Export` with `## <date>` day groups and `### <visit>` blocks containing `- **Arrived/Departed/Duration/Address/Coordinates:** ...` bullets and an optional `> notes` blockquote.
-- Points: `# iso.me Location Points Export` with `## <date>` day groups and `| Time | Lat | Lon | ... |` tables.
+````markdown
+```iso-me
+source: today
+title: Today
+```
+````
 
-Markdown parsing assumes the exported dates/times are in en-US format (e.g. `Friday, March 14, 2025` and `3:24 PM`), which matches the iso.me default. JSON and CSV are locale-independent.
+````markdown
+```iso-me
+source: yesterday
+title: Yesterday
+```
+````
 
-### Tracking protocol formats (v1.2+)
+````markdown
+```iso-me
+source: 2026-05-04
+title: May 4, 2026
+```
+````
 
-These formats carry only GPS location points — no visit/stay data. The format is auto-detected by the structure of the JSON.
+````markdown
+```iso-me
+source: last 7 days
+title: Last week
+interactive: true
+```
+````
 
-**OwnTracks** (`.json`) — [OwnTracks protocol](https://owntracks.org/booklet/tech/json/):
-- Array of `{ _type: "location", lat, lon, tst, acc?, alt?, vel? }` objects
-- `vel` is km/h (converted to m/s internally)
-- `tst` is Unix seconds
+### Date keyword settings
 
-**Overland** (`.json`) — [Overland iOS](https://github.com/aaronpk/Overland-iOS) GeoJSON format:
-- `{ locations: [{ type: "Feature", geometry: { type: "Point", coordinates: [lon, lat] }, properties: { timestamp, altitude?, speed?, horizontal_accuracy? } }] }`
-- Coordinates use `[longitude, latitude]` ordering
+Date keywords use three settings:
 
-**GPX** (`.gpx`) — [GPS Exchange Format](https://www.topografix.com/GPX/1/1/) with iso.me extensions:
-- Visits rendered from `<wpt>` elements with custom `<isome:departedAt>` and `<isome:durationMinutes>` extensions
-- Location points rendered from `<trk>/<trkseg>/<trkpt>` elements with `<isome:speed>`, `<isome:horizontalAccuracy>`, and `<isome:isOutlier>` extensions
-- Combined GPX files with both waypoints and tracks are fully supported
+| Setting | Default | Description |
+|---|---|---|
+| **Exports folder** | empty | Vault-relative folder to search, for example `exports`. |
+| **Export filename pattern** | `*{date}*` | Glob template used to find files for a resolved date. `{date}` is replaced with the formatted date. |
+| **Export date format** | `YYYY-MM-DD` | Format used when inserting dates into the filename pattern. Supported tokens: `YYYY`, `MM`, `DD`. |
 
-GPX parsing uses the browser's native `DOMParser` (available in both desktop and mobile Obsidian).
+With these settings:
 
-## Examples
+```text
+Exports folder: exports
+Export filename pattern: *{date}*
+Export date format: YYYY-MM-DD
+```
 
-The [`examples/`](examples/) directory contains sample export files for all six supported formats, plus a [`usage-examples.md`](examples/usage-examples.md) with ready-to-paste Obsidian code blocks:
+This block:
+
+````markdown
+```iso-me
+source: yesterday
+```
+````
+
+resolves to a glob like:
+
+```text
+exports/*2026-05-08*
+```
+
+That matches filenames such as:
+
+```text
+exports/iso.me - Friday 2026-05-08 - all.json
+exports/isome_complete_export_2026-05-08_121042.json
+```
+
+### Filename pattern examples
+
+| Pattern | Matches |
+|---|---|
+| `*{date}*` | Any filename containing the date. |
+| `iso.me*{date}*all*` | iso.me per-day combined files containing `all`. |
+| `*{date}*visits*` | Visit-only per-day files. |
+| `*{date}*points*` | Point-only per-day files. |
+| `daily-{date}.json` | Exact-style filenames like `daily-2026-05-04.json`. |
+
+If the pattern does not contain `{date}`, the plugin appends `*<date>*` to the pattern internally.
+
+### Glob rules
+
+- `*` matches any characters within a filename component.
+- `?` matches one character within a filename component.
+- Wildcards are supported in the filename only; the directory path must be literal.
+- Matched files are sorted alphabetically before loading.
+- Duplicate source paths are loaded only once.
+- If any matched file fails to parse, the map block shows an error for that block.
+
+---
+
+## Plugin settings reference
+
+Open **Settings → iso.me Maps** to configure defaults.
+
+### Tile settings
+
+| Setting | Stored key | Default | Description |
+|---|---|---|---|
+| Tile provider | `tileProvider` | `carto-voyager` | Basemap preset. |
+| Tile layer URL | `tileUrl` | CartoDB Voyager URL | Leaflet tile URL template. Visible when provider is **Custom**. |
+| Tile attribution | `tileAttribution` | Carto/OpenStreetMap attribution | HTML attribution shown in the map corner. Visible when provider is **Custom**. |
+
+Available tile provider IDs:
+
+| ID | Label | Notes |
+|---|---|---|
+| `carto-voyager` | CartoDB Voyager | Default. Good general-purpose map. |
+| `carto-positron` | CartoDB Positron | Light basemap. |
+| `carto-dark-matter` | CartoDB Dark Matter | Dark basemap. |
+| `opentopomap` | OpenTopoMap | Topographic map. |
+| `esri-world-imagery` | Esri World Imagery | Satellite imagery. |
+| `osm` | OpenStreetMap | Mobile only; desktop Obsidian/Electron is blocked by OSM tile server referer policy. |
+| `custom` | Custom | Use your own Leaflet tile URL and attribution. |
+
+Tile setting changes apply to newly rendered maps. Already-open notes may need to be reloaded.
+
+### Export lookup settings
+
+| Setting | Stored key | Default | Description |
+|---|---|---|---|
+| Exports folder | `exportsFolder` | empty | Vault-relative folder used for bare filenames and date keywords. Trailing slashes are removed. |
+| Export filename pattern | `exportFilenamePattern` | `*{date}*` | Glob template for date keyword lookup. Supports `{date}`, `*`, and `?`. |
+| Export date format | `exportDateFormat` | `YYYY-MM-DD` | Date formatting tokens used by date keywords. Supports `YYYY`, `MM`, `DD`. |
+
+### Map defaults and layer styling
+
+| Setting | Stored key | Default | Description |
+|---|---|---|---|
+| Default map height | `defaultHeight` | `400` | Used when a block omits `height`. |
+| Default zoom | `defaultZoom` | `11` | Used as fallback zoom and when a block omits `zoom`. |
+| Default center | `defaultCenter` | `[0, 0]` | Used when no visible layer provides bounds. This setting exists in saved plugin data; it is not currently exposed in the settings UI. |
+| Route color | `routeColor` | `#2563eb` | Polyline color for routes. |
+| Visit marker color | `markerColor` | `#2dd4bf` | Circle marker color for visits. |
+| GPS glitch color | `outlierColor` | `#f59e0b` | Marker color for outliers when shown. |
+| Heatmap radius | `heatRadius` | `25` | Leaflet.heat radius in pixels. |
+| Heatmap blur | `heatBlur` | `15` | Leaflet.heat blur in pixels. |
+| Show visit markers by default | `showVisitsByDefault` | `true` | Default for `show_visits`. |
+| Show routes by default | `showRoutesByDefault` | `true` | Default for `show_routes`. |
+| Show heatmap by default | `showHeatmapByDefault` | `false` | Default for `show_heatmap`. |
+| Show GPS glitches by default | `showOutliersByDefault` | `false` | Default for `show_outliers`. |
+
+---
+
+## Supported export formats and fields
+
+The parser is intentionally permissive: rows or objects missing required plotting fields are skipped instead of breaking the whole export. A file-level parse error is shown only when the overall file shape is unrecognized or invalid.
+
+### iso.me JSON
+
+File extension: `.json`
+
+Supported root shapes:
+
+```json
+{ "exportDate": "2026-05-04T12:00:00Z", "visits": [] }
+```
+
+```json
+{ "exportDate": "2026-05-04T12:00:00Z", "points": [] }
+```
+
+```json
+{ "exportDate": "2026-05-04T12:00:00Z", "visits": [], "points": [] }
+```
+
+Visit objects:
+
+| Field | Required | Type | Description |
+|---|---:|---|---|
+| `latitude` | Yes | number | Visit latitude. |
+| `longitude` | Yes | number | Visit longitude. |
+| `arrivedAt` | Yes | string | Arrival timestamp. ISO 8601 is recommended. |
+| `departedAt` | No | string or null | Departure timestamp. |
+| `durationMinutes` | No | number or null | Duration used for marker sizing and popup text. |
+| `locationName` | No | string or null | Place name shown in popup and top-place stats. |
+| `address` | No | string or null | Address shown in popup. |
+| `notes` | No | string or null | Notes shown in popup. |
+
+Point objects:
+
+| Field | Required | Type | Description |
+|---|---:|---|---|
+| `latitude` | Yes | number | Point latitude. |
+| `longitude` | Yes | number | Point longitude. |
+| `timestamp` | Yes | string | Point timestamp. ISO 8601 is recommended. |
+| `timestampUnix` | No | number | Unix timestamp in seconds. |
+| `altitude` | No | number or null | Altitude in meters. |
+| `speed` | No | number or null | Speed in meters/second. Stats display average speed in km/h. |
+| `course` | No | number or null | Course/bearing in degrees. Stored but not currently visualized. |
+| `horizontalAccuracy` | No | number or null | Horizontal accuracy in meters. |
+| `verticalAccuracy` | No | number or null | Vertical accuracy in meters. |
+| `isOutlier` | No | boolean | Marks a GPS glitch/outlier. Defaults to `false`. |
+
+### iso.me CSV
+
+File extension: `.csv`
+
+CSV type is detected by the header row.
+
+#### Visits CSV
+
+A visits CSV is detected when the header includes:
+
+```text
+arrived_at
+```
+
+Required columns for plotted rows:
+
+| Column | Required | Description |
+|---|---:|---|
+| `arrived_at` | Yes | Arrival timestamp. |
+| `latitude` | Yes | Visit latitude. Enable coordinates in iso.me export options. |
+| `longitude` | Yes | Visit longitude. Enable coordinates in iso.me export options. |
+
+Optional columns:
+
+| Column | Description |
+|---|---|
+| `departed_at` | Departure timestamp. |
+| `duration_minutes` | Visit duration. |
+| `location_name` | Place name. |
+| `address` | Address. |
+| `notes` | Notes. |
+
+Rows without `arrived_at`, `latitude`, or `longitude` are skipped.
+
+#### Points CSV
+
+A points CSV is detected when the header includes all of:
+
+```text
+timestamp, latitude, longitude
+```
+
+Required columns for plotted rows:
+
+| Column | Required | Description |
+|---|---:|---|
+| `timestamp` | Yes | Point timestamp. |
+| `latitude` | Yes | Point latitude. |
+| `longitude` | Yes | Point longitude. |
+
+Optional columns:
+
+| Column | Description |
+|---|---|
+| `timestamp_unix` | Unix timestamp in seconds. |
+| `altitude` | Altitude in meters. |
+| `speed` | Speed in meters/second. |
+| `horizontal_accuracy` | Horizontal accuracy in meters. |
+| `is_outlier` | Outlier flag. Accepted true values: `true`, `yes`, `1`. |
+
+### iso.me Markdown
+
+File extensions: `.md`, `.markdown`
+
+Markdown parsing assumes iso.me's default English date/time export format, for example:
+
+```text
+Friday, March 14, 2025
+3:24 PM
+3:24:05 PM
+15:24
+15:24:05
+```
+
+Supported H1 sections:
+
+| H1 | Parsed as |
+|---|---|
+| `# iso.me Export` | Visits. |
+| `# Visits` | Visits. |
+| Any H1 containing `iso.me` | Visits, unless it is a location-points or complete-export heading. |
+| `# iso.me Location Points Export` | Location points. |
+
+#### Visits Markdown — bullet format
+
+Expected structure:
+
+```markdown
+# iso.me Export
+
+## Friday, March 14, 2025
+
+### Coffee Shop
+- **Arrived:** 8:12 AM
+- **Departed:** 8:45 AM
+- **Duration:** 33m
+- **Address:** 123 Market St
+- **Coordinates:** 37.7749, -122.4194
+> Optional notes
+```
+
+Supported bullet fields:
+
+| Field | Required | Description |
+|---|---:|---|
+| `Arrived` | Yes | Arrival time. |
+| `Coordinates` | Yes | `latitude, longitude`. |
+| `Departed` | No | Departure time. |
+| `Duration` | No | Text containing hours/minutes, for example `1h 20m` or `33m`. |
+| `Address` | No | Address. |
+| blockquote notes | No | Lines beginning with `> `. |
+
+The `###` heading is used as `locationName` unless the heading itself is just a time.
+
+#### Visits Markdown — table format
+
+The parser also accepts visit tables with at least these columns:
+
+```text
+Arrived, Lat, Lon
+```
+
+Optional columns:
+
+```text
+Departed, Duration, Location, Address, Notes
+```
+
+#### Points Markdown — table format
+
+Expected H1:
+
+```markdown
+# iso.me Location Points Export
+```
+
+The point table must include:
+
+```text
+Time, Lat, Lon
+```
+
+Optional columns:
+
+```text
+Altitude, Speed, Accuracy, Outlier
+```
+
+`Outlier` is true when the cell is `yes` or `true`.
+
+### OwnTracks JSON
+
+File extension: `.json`
+
+Detected when the JSON root is an array whose first object looks like an OwnTracks location:
+
+```json
+[
+  {
+    "_type": "location",
+    "lat": 37.7749,
+    "lon": -122.4194,
+    "tst": 1777891200,
+    "acc": 10,
+    "alt": 12,
+    "vel": 18,
+    "cog": 270,
+    "vac": 5
+  }
+]
+```
+
+Supported fields:
+
+| Field | Required | Description |
+|---|---:|---|
+| `_type` | Yes | Must be `location`. |
+| `lat` | Yes | Latitude. |
+| `lon` | Yes | Longitude. |
+| `tst` | Yes | Unix timestamp in seconds. |
+| `acc` | No | Horizontal accuracy in meters. |
+| `alt` | No | Altitude in meters. |
+| `vel` | No | Speed in km/h; converted internally to meters/second. |
+| `cog` | No | Course over ground in degrees. |
+| `vac` | No | Vertical accuracy in meters. |
+| `tid` | No | Tracker ID. Accepted but not displayed. |
+
+OwnTracks files contain points only, so visit markers are not rendered.
+
+### Overland JSON / GeoJSON
+
+File extension: `.json`
+
+Detected when the JSON root has a `locations` array of GeoJSON point features:
+
+```json
+{
+  "locations": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-122.4194, 37.7749]
+      },
+      "properties": {
+        "timestamp": "2026-05-04T12:00:00Z",
+        "altitude": 12,
+        "speed": 4.2,
+        "horizontalAccuracy": 10,
+        "deviceId": "iphone"
+      }
+    }
+  ]
+}
+```
+
+Supported fields:
+
+| Field | Required | Description |
+|---|---:|---|
+| `locations[]` | Yes | Array of GeoJSON features. |
+| `type` | Yes | Feature type must be `Feature`. |
+| `geometry.type` | Yes | Geometry type must be `Point`. |
+| `geometry.coordinates` | Yes | `[longitude, latitude]` order. |
+| `properties.timestamp` | Yes | Timestamp string. |
+| `properties.altitude` | No | Altitude in meters. |
+| `properties.speed` | No | Speed in meters/second. |
+| `properties.horizontalAccuracy` | No | Horizontal accuracy in meters. |
+| `properties.deviceId` | No | Accepted but not displayed. |
+
+Overland files contain points only, so visit markers are not rendered.
+
+### GPX
+
+File extension: `.gpx`
+
+The parser uses the browser's built-in `DOMParser`, available in desktop and mobile Obsidian.
+
+Supported GPX content:
+
+| Element | Parsed as | Required data |
+|---|---|---|
+| `<wpt lat="..." lon="...">` | Visit | `lat`, `lon`, and child `<time>`. |
+| `<trk><trkseg><trkpt lat="..." lon="...">` | Location point | `lat`, `lon`, and child `<time>`. |
+| `<metadata><time>` | Export date | Optional. |
+
+Waypoint visit fields:
+
+| GPX field | Maps to |
+|---|---|
+| `wpt@lat`, `wpt@lon` | `latitude`, `longitude` |
+| `<time>` | `arrivedAt` |
+| `<name>` | `locationName`; `Visit` is treated as empty |
+| `<desc>` | Address before ` — ` |
+| `<extensions><isome:departedAt>` | `departedAt` |
+| `<extensions><isome:durationMinutes>` | `durationMinutes` |
+
+Track point fields:
+
+| GPX field | Maps to |
+|---|---|
+| `trkpt@lat`, `trkpt@lon` | `latitude`, `longitude` |
+| `<time>` | `timestamp` |
+| `<ele>` | `altitude` |
+| `<extensions><isome:speed>` | `speed` |
+| `<extensions><isome:horizontalAccuracy>` | `horizontalAccuracy` |
+| `<extensions><isome:isOutlier>` | `isOutlier`; true only when text is `true` |
+
+iso.me extension namespace:
+
+```xml
+xmlns:isome="https://isome.isolated.tech/gpx/1.0"
+```
+
+---
+
+## Layer behavior details
+
+### Visits
+
+- Visits require latitude, longitude, and arrival time.
+- Marker radius is based on `durationMinutes` using a logarithmic scale.
+- Marker opacity increases for longer stays.
+- Popup fields are escaped before rendering.
+
+### Routes
+
+- Routes require location points.
+- Outlier points are always removed before route rendering.
+- Routes with more than 1,500 points are visually downsampled for rendering performance, but popup path distance is computed from the full clean point set.
+- Single-point routes render as one point marker.
+
+### Heatmap
+
+- Heatmap uses clean, non-outlier points only.
+- Radius and blur come from plugin settings.
+- Heatmap intensity is currently uniform per point.
+
+### Outliers
+
+- Outliers are points where `isOutlier` is true.
+- They are hidden by default.
+- When shown, they render as small markers with a timestamp popup.
+- They never contribute to routes, heatmaps, route distance, or average speed.
+
+### Stats bar
+
+The stats bar is best-effort and never blocks map rendering. It summarizes the loaded export data:
+
+- Detected format
+- Visit count
+- Point count
+- Total clean-point route distance
+- Average speed from clean points with speed data
+- Date range
+- Top repeated place when a place appears at least twice
+
+When `interactive: true`, filters update map layers but the stats bar remains a summary of the loaded export.
+
+### Interactive filters
+
+`interactive: true` adds:
+
+- Format badge
+- Day selector with **All days** plus every local day present in visits or points
+- Time-of-day range sliders from **Start of day** to **End of day**
+- 15-minute slider steps
+- Reset button
+
+Filtering uses each timestamp's local day and local time in Obsidian.
+
+---
+
+## Common recipes
+
+### Daily note template: yesterday's map
+
+Set **Exports folder** to `exports`, then put this in a daily note template:
+
+````markdown
+```iso-me
+source: yesterday
+title: Yesterday's movement
+height: 450
+interactive: true
+```
+````
+
+### Last 30 days from one-file-per-day exports
+
+````markdown
+```iso-me
+source: last 30 days
+title: Last 30 days
+height: 600
+show_heatmap: true
+interactive: true
+```
+````
+
+### Separate visit and point files
+
+````markdown
+```iso-me
+sources:
+  - exports/2026-05-04-visits.md
+  - exports/2026-05-04-points.md
+title: May 4, 2026
+show_visits: true
+show_routes: true
+```
+````
+
+### All files in a folder
+
+````markdown
+```iso-me
+source: exports/may-2026/
+title: May 2026
+interactive: true
+```
+````
+
+### Glob a subset of daily files
+
+````markdown
+```iso-me
+source: exports/iso.me*all*.json
+title: Combined daily exports
+```
+````
+
+### Heatmap only
+
+````markdown
+```iso-me
+source: exports/month.json
+title: Density map
+show_visits: false
+show_routes: false
+show_heatmap: true
+show_stats: true
+```
+````
+
+### Satellite map default
+
+Set **Tile provider** to `esri-world-imagery` in settings, then use normal blocks:
+
+````markdown
+```iso-me
+source: exports/hike.gpx
+title: Hike
+show_routes: true
+```
+````
+
+---
+
+## Examples included in this repository
+
+The [`examples/`](examples/) directory contains sample export files for all supported formats, plus [`examples/usage-examples.md`](examples/usage-examples.md) with ready-to-paste Obsidian code blocks.
 
 | File | Format | Contains |
-|------|--------|----------|
-| `san-francisco-combined.json` | iso.me JSON | Visits + points (combined) |
+|---|---|---|
+| `san-francisco-combined.json` | iso.me JSON | Visits + points |
 | `san-francisco-visits.json` | iso.me JSON | Visits only |
 | `san-francisco-points.json` | iso.me JSON | Points only |
 | `commute-visits.csv` | CSV | Visits |
@@ -181,6 +904,70 @@ The [`examples/`](examples/) directory contains sample export files for all six 
 | `owntracks-commute.json` | OwnTracks | GPS points |
 | `overland-commute.json` | Overland | GPS points |
 | `san-francisco-day.gpx` | GPX | Waypoints + tracks |
+
+---
+
+## Troubleshooting
+
+### `iso.me: Missing required source`
+
+Add either `source:` or `sources:` to the block.
+
+### `File not found`
+
+Check:
+
+- The path is relative to the vault root.
+- The file is inside the vault.
+- **Exports folder** is set correctly if you are using bare filenames or date keywords.
+- Date keyword pattern matches the actual filename.
+
+### Date keyword does not find my file
+
+Use a more specific or more permissive **Export filename pattern**.
+
+For example, if files are named:
+
+```text
+iso.me - Friday 2026-05-08 - all.json
+```
+
+use:
+
+```text
+*{date}*all*
+```
+
+### Visits do not appear from CSV or Markdown
+
+Make sure the export includes coordinates. Visit rows without latitude and longitude are skipped.
+
+### Routes or heatmaps do not appear
+
+Make sure the export includes location points. Visit-only exports can show visit markers but cannot render routes or heatmaps.
+
+### Outliers do not affect routes
+
+This is intentional. Outliers are always excluded from routes, heatmaps, distance, and average speed.
+
+### OpenStreetMap tiles are blank on desktop
+
+Use CartoDB Voyager, CartoDB Positron, CartoDB Dark Matter, OpenTopoMap, Esri World Imagery, or a custom provider. OSM's standard tile servers reject desktop Obsidian/Electron requests due to referer policy.
+
+### The map has the wrong timezone/day
+
+Interactive day and time filters use the local timezone of Obsidian when parsing timestamps.
+
+---
+
+## Privacy notes
+
+- Export files stay in your Obsidian vault.
+- The plugin reads local vault files and renders the map in Obsidian.
+- Basemap tiles are requested from the selected tile provider, so map tile requests may reveal viewed map areas to that provider.
+- Use a custom/self-hosted tile provider if you need stricter privacy.
+
+---
 
 ## Development
 
@@ -196,7 +983,9 @@ To test locally, symlink the plugin folder into a test vault:
 ln -s "$PWD" "<test-vault>/.obsidian/plugins/iso-me-maps"
 ```
 
-Reload Obsidian, disable Safe Mode, and enable "iso.me Maps".
+Reload Obsidian, disable Restricted mode if needed, and enable **iso.me Maps**.
+
+---
 
 ## License
 
