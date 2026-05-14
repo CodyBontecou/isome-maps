@@ -1,5 +1,6 @@
 node_modules/
 release/
 main.js
+.obsidian/
 *.log
 .DS_Store

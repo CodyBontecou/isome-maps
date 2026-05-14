@@ -42,8 +42,8 @@ export function parseOverland(data: Record<string, unknown>): ExportShape {
 
 		const coords = geom.coordinates as number[] | null;
 		if (!coords || coords.length < 2) continue;
-		const lon = coords[0]!;
-		const lat = coords[1]!;
+		const lon = coords[0];
+		const lat = coords[1];
 		if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
 
 		const props = feat.properties as Record<string, unknown> | null;

@@ -8,17 +8,17 @@ function downsample<T>(arr: T[], max: number): T[] {
 	const stride = arr.length / max;
 	const out: T[] = [];
 	for (let i = 0; i < max - 1; i++) {
-		out.push(arr[Math.floor(i * stride)]!);
+		out.push(arr[Math.floor(i * stride)]);
 	}
-	out.push(arr[arr.length - 1]!);
+	out.push(arr[arr.length - 1]);
 	return out;
 }
 
 function totalDistanceMeters(points: LocationPoint[]): number {
 	let total = 0;
 	for (let i = 1; i < points.length; i++) {
-		const a = points[i - 1]!;
-		const b = points[i]!;
+		const a = points[i - 1];
+		const b = points[i];
 		total += L.latLng(a.latitude, a.longitude).distanceTo(
 			L.latLng(b.latitude, b.longitude),
 		);
@@ -27,8 +27,8 @@ function totalDistanceMeters(points: LocationPoint[]): number {
 }
 
 function straightDistanceMeters(points: LocationPoint[]): number {
-	const a = points[0]!;
-	const b = points[points.length - 1]!;
+	const a = points[0];
+	const b = points[points.length - 1];
 	return L.latLng(a.latitude, a.longitude).distanceTo(
 		L.latLng(b.latitude, b.longitude),
 	);
@@ -48,7 +48,7 @@ export function renderRoutePolyline(
 	if (points.length === 0) return [];
 
 	if (points.length === 1) {
-		const p = points[0]!;
+		const p = points[0];
 		const latlng: L.LatLngTuple = [p.latitude, p.longitude];
 		L.circleMarker(latlng, {
 			radius: 6,
@@ -83,8 +83,8 @@ export function renderRoutePolyline(
 		`</div>`;
 	polyline.bindPopup(popupHtml);
 
-	const start = coords[0]!;
-	const end = coords[coords.length - 1]!;
+	const start = coords[0];
+	const end = coords[coords.length - 1];
 	L.circleMarker(start, {
 		radius: 6,
 		color: "#22c55e",

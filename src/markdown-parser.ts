@@ -22,7 +22,7 @@ interface DateParts {
 function parseDateHeading(text: string): DateParts | null {
 	const m = text.match(/(\w+)\s+(\d{1,2}),\s+(\d{4})/);
 	if (!m) return null;
-	const month = MONTHS[m[1]!.toLowerCase()];
+	const month = MONTHS[m[1].toLowerCase()];
 	if (month === undefined) return null;
 	const day = Number(m[2]);
 	const year = Number(m[3]);
@@ -77,7 +77,7 @@ function parseCoords(text: string): [number, number] | null {
 function parseBulletField(line: string): { key: string; value: string } | null {
 	const m = line.match(/^\s*-\s*\*\*([^*]+):\*\*\s*(.+?)\s*$/);
 	if (!m) return null;
-	return { key: m[1]!.trim().toLowerCase(), value: m[2]!.trim() };
+	return { key: m[1].trim().toLowerCase(), value: m[2].trim() };
 }
 
 interface VisitDraft {
@@ -218,8 +218,9 @@ function parseVisitsTable(lines: string[]): Visit[] {
 				lowered.includes("lat") &&
 				lowered.includes("lon")
 			) {
-				columns = new Map();
-				lowered.forEach((c, idx) => columns!.set(c, idx));
+				const headerColumns = new Map<string, number>();
+				lowered.forEach((c, idx) => headerColumns.set(c, idx));
+				columns = headerColumns;
 			}
 			continue;
 		}
@@ -227,9 +228,11 @@ function parseVisitsTable(lines: string[]): Visit[] {
 		if (isSeparatorRow(cells)) continue;
 		if (!currentDate) continue;
 
-		const idx = (key: string) => columns!.get(key);
-		const get = (k: string) =>
-			idx(k) !== undefined ? cells[idx(k)!] : undefined;
+		const activeColumns = columns;
+		const get = (key: string) => {
+			const index = activeColumns.get(key);
+			return index === undefined ? undefined : cells[index];
+		};
 
 		const arrived = parseTime(get("arrived") ?? "");
 		if (!arrived) continue;
@@ -267,11 +270,6 @@ function parseVisitsMarkdown(lines: string[]): Visit[] {
 	const bullet = parseVisitsBullet(lines);
 	if (bullet.length > 0) return bullet;
 	return parseVisitsTable(lines);
-}
-
-interface PointTableContext {
-	date: DateParts;
-	columns: Map<string, number>; // header lowercased -> index
 }
 
 function parseTableRow(line: string): string[] | null {
@@ -314,8 +312,9 @@ function parsePointsMarkdown(lines: string[]): LocationPoint[] {
 			// Expect header row containing "Time" and "Lat" and "Lon".
 			const lowered = cells.map((c) => c.toLowerCase());
 			if (lowered.includes("time") && lowered.includes("lat") && lowered.includes("lon")) {
-				columns = new Map();
-				lowered.forEach((c, idx) => columns!.set(c, idx));
+				const headerColumns = new Map<string, number>();
+				lowered.forEach((c, idx) => headerColumns.set(c, idx));
+				columns = headerColumns;
 			}
 			continue;
 		}
@@ -323,10 +322,14 @@ function parsePointsMarkdown(lines: string[]): LocationPoint[] {
 		if (isSeparatorRow(cells)) continue;
 		if (!currentDate) continue;
 
-		const idx = (key: string) => columns!.get(key);
-		const timeStr = idx("time") !== undefined ? cells[idx("time")!] : undefined;
-		const latStr = idx("lat") !== undefined ? cells[idx("lat")!] : undefined;
-		const lonStr = idx("lon") !== undefined ? cells[idx("lon")!] : undefined;
+		const activeColumns = columns;
+		const get = (key: string) => {
+			const index = activeColumns.get(key);
+			return index === undefined ? undefined : cells[index];
+		};
+		const timeStr = get("time");
+		const latStr = get("lat");
+		const lonStr = get("lon");
 		if (!timeStr || !latStr || !lonStr) continue;
 
 		const time = parseTime(timeStr);
@@ -338,25 +341,17 @@ function parsePointsMarkdown(lines: string[]): LocationPoint[] {
 		const iso = combineToISO(currentDate, time);
 		if (!iso) continue;
 
-		const outlierIdx = idx("outlier");
-		let isOutlier = false;
-		if (outlierIdx !== undefined) {
-			const v = cells[outlierIdx]?.toLowerCase();
-			isOutlier = v === "yes" || v === "true";
-		}
-
-		const speedIdx = idx("speed");
-		const altIdx = idx("altitude");
-		const accIdx = idx("accuracy");
+		const outlier = get("outlier")?.toLowerCase();
+		const isOutlier = outlier === "yes" || outlier === "true";
 
 		points.push({
 			latitude: lat,
 			longitude: lon,
 			timestamp: iso,
-			altitude: altIdx !== undefined ? stripUnit(cells[altIdx]!) : null,
-			speed: speedIdx !== undefined ? stripUnit(cells[speedIdx]!) : null,
+			altitude: stripUnit(get("altitude") ?? ""),
+			speed: stripUnit(get("speed") ?? ""),
 			course: null,
-			horizontalAccuracy: accIdx !== undefined ? stripUnit(cells[accIdx]!) : null,
+			horizontalAccuracy: stripUnit(get("accuracy") ?? ""),
 			verticalAccuracy: null,
 			isOutlier,
 		});
@@ -387,7 +382,7 @@ export function parseExportMarkdown(text: string): ExportShape {
 	let cur: Section | null = null;
 
 	for (let i = 0; i < lines.length; i++) {
-		const t = lines[i]!.trim();
+		const t = lines[i].trim();
 		if (t.startsWith("# ") && !t.startsWith("## ")) {
 			if (cur) {
 				cur.end = i;

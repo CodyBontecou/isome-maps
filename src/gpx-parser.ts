@@ -143,7 +143,7 @@ function resolveIsomeNamespace(root: Element): string | null {
 		if (attr.value === "https://isome.isolated.tech/gpx/1.0") {
 			if (attr.name === "xmlns:isome") return "isome";
 			const m = attr.name.match(/^xmlns:(.+)$/);
-			if (m) return m[1]!;
+			if (m) return m[1];
 		}
 	}
 	// Fallback: try common prefixes

@@ -191,8 +191,10 @@ export class IsoMeSettingTab extends PluginSettingTab {
 				);
 		}
 
-		const exportsHeader = containerEl.createEl("h3", { text: "Exports" });
-		exportsHeader.addClass("iso-me-section-header");
+		new Setting(containerEl)
+			.setName("Exports")
+			.setHeading()
+			.settingEl.addClass("iso-me-section-header");
 
 		new Setting(containerEl)
 			.setName("Exports folder")
@@ -241,8 +243,10 @@ export class IsoMeSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		const mapHeader = containerEl.createEl("h3", { text: "Map defaults" });
-		mapHeader.addClass("iso-me-section-header");
+		new Setting(containerEl)
+			.setName("Map defaults")
+			.setHeading()
+			.settingEl.addClass("iso-me-section-header");
 
 		new Setting(containerEl)
 			.setName("Default map height")

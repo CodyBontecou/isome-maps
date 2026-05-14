@@ -47,15 +47,15 @@ export function parseBlockConfig(source: string): BlockConfig {
 	let i = 0;
 
 	while (i < lines.length) {
-		const rawLine = lines[i]!;
+		const rawLine = lines[i];
 		const line = rawLine.trim();
 		i++;
 
 		if (!line || line.startsWith("#")) continue;
 		const m = line.match(/^([a-z_-]+)\s*:\s*(.*)$/i);
 		if (!m) continue;
-		const key = m[1]!.toLowerCase();
-		const rawValue = m[2]!.trim();
+		const key = m[1].toLowerCase();
+		const rawValue = m[2].trim();
 		const value = unquote(rawValue);
 
 		if (key === "sources") {
@@ -64,9 +64,9 @@ export function parseBlockConfig(source: string): BlockConfig {
 				collected.push(...splitListValue(rawValue));
 			} else {
 				while (i < lines.length) {
-					const itemMatch = lines[i]!.match(/^\s*-\s+(.+?)\s*$/);
+					const itemMatch = lines[i].match(/^\s*-\s+(.+?)\s*$/);
 					if (!itemMatch) break;
-					collected.push(unquote(itemMatch[1]!));
+					collected.push(unquote(itemMatch[1]));
 					i++;
 				}
 			}

@@ -137,7 +137,7 @@ function splitDirAndName(path: string): { dir: string; name: string } {
 function globToRegExp(pattern: string): RegExp {
 	let out = "^";
 	for (let i = 0; i < pattern.length; i++) {
-		const ch = pattern[i]!;
+		const ch = pattern[i];
 		if (ch === "*") out += "[^/]*";
 		else if (ch === "?") out += "[^/]";
 		else if (/[.+^${}()|[\]\\]/.test(ch)) out += `\\${ch}`;
@@ -213,7 +213,7 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 	let raw: string;
 	try {
 		raw = await app.vault.adapter.read(path);
-	} catch (e) {
+	} catch {
 		throw new DataLoadError(`File not found: ${path}`, path);
 	}
 
@@ -222,7 +222,7 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 	if (format === "gpx") {
 		try {
 			const shape = parseGPX(raw);
-			return { ...shape, detectedFormat: "gpx" as DetectedFormat };
+			return { ...shape, detectedFormat: "gpx" };
 		} catch (e) {
 			const msg = e instanceof GPXParseError || e instanceof Error ? e.message : String(e);
 			throw new DataLoadError(`Invalid GPX: ${msg}`, path);
@@ -232,7 +232,7 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 	if (format === "csv") {
 		try {
 			const shape = parseExportCSV(raw);
-			return { ...shape, detectedFormat: "iso-me-csv" as DetectedFormat };
+			return { ...shape, detectedFormat: "iso-me-csv" };
 		} catch (e) {
 			const msg = e instanceof CSVParseError || e instanceof Error ? e.message : String(e);
 			throw new DataLoadError(`Invalid CSV: ${msg}`, path);
@@ -242,7 +242,7 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 	if (format === "markdown") {
 		try {
 			const shape = parseExportMarkdown(raw);
-			return { ...shape, detectedFormat: "iso-me-markdown" as DetectedFormat };
+			return { ...shape, detectedFormat: "iso-me-markdown" };
 		} catch (e) {
 			const msg = e instanceof MarkdownParseError || e instanceof Error ? e.message : String(e);
 			throw new DataLoadError(`Invalid Markdown: ${msg}`, path);

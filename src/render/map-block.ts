@@ -128,7 +128,7 @@ export class MapRenderChild extends MarkdownRenderChild {
 		this.applyFilter();
 
 		// Reading-view 0-height race fix: re-measure after layout settles.
-		requestAnimationFrame(() => {
+		window.requestAnimationFrame(() => {
 			this.map?.invalidateSize();
 		});
 	}
@@ -194,7 +194,7 @@ export class MapRenderChild extends MarkdownRenderChild {
 			}
 
 			if (bounds.length === 1) {
-				map.setView(bounds[0]!, this.cfg.zoom ?? 14);
+				map.setView(bounds[0], this.cfg.zoom ?? 14);
 			} else {
 				map.fitBounds(L.latLngBounds(bounds), { padding: [20, 20] });
 				if (!this.hasFitInitial && this.cfg.zoom != null) {

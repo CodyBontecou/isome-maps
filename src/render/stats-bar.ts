@@ -1,4 +1,4 @@
-import { DetectedFormat, ExportShape, LocationPoint, Visit } from "../types";
+import { DetectedFormat, ExportShape, LocationPoint } from "../types";
 
 export interface MapStats {
 	visitCount: number;
@@ -92,7 +92,7 @@ export function computeStats(data: ExportShape): MapStats {
 		.filter((p) => !p.isOutlier)
 		.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 	for (let i = 1; i < cleanPoints.length; i++) {
-		totalDistanceKm += distanceBetween(cleanPoints[i - 1]!, cleanPoints[i]!) / 1000;
+		totalDistanceKm += distanceBetween(cleanPoints[i - 1], cleanPoints[i]) / 1000;
 	}
 
 	// Average speed (from clean points with speed data)

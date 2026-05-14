@@ -16,7 +16,7 @@ function parseCSV(text: string): string[][] {
 	const len = text.length;
 
 	while (i < len) {
-		const c = text[i]!;
+		const c = text[i];
 		if (inQuotes) {
 			if (c === '"') {
 				if (i + 1 < len && text[i + 1] === '"') {
@@ -103,66 +103,57 @@ function isPointsCSV(headers: Map<string, number>): boolean {
 	return headers.has("timestamp") && headers.has("latitude") && headers.has("longitude");
 }
 
+function cell(row: string[], headers: Map<string, number>, key: string): string | undefined {
+	const index = headers.get(key);
+	return index === undefined ? undefined : row[index];
+}
+
 function parseVisits(rows: string[][], headers: Map<string, number>): Visit[] {
-	const idx = (key: string) => headers.get(key);
 	const visits: Visit[] = [];
 
 	for (let r = 1; r < rows.length; r++) {
-		const row = rows[r]!;
-		const arrivedAt = idx("arrived_at") !== undefined ? row[idx("arrived_at")!] : undefined;
-		const lat = idx("latitude") !== undefined ? toFiniteNumber(row[idx("latitude")!]) : null;
-		const lon = idx("longitude") !== undefined ? toFiniteNumber(row[idx("longitude")!]) : null;
+		const row = rows[r];
+		const arrivedAt = cell(row, headers, "arrived_at");
+		const lat = toFiniteNumber(cell(row, headers, "latitude"));
+		const lon = toFiniteNumber(cell(row, headers, "longitude"));
 		if (!arrivedAt || lat === null || lon === null) continue;
 
 		visits.push({
 			latitude: lat,
 			longitude: lon,
 			arrivedAt,
-			departedAt: idx("departed_at") !== undefined ? toString(row[idx("departed_at")!]) : null,
-			durationMinutes:
-				idx("duration_minutes") !== undefined
-					? toFiniteNumber(row[idx("duration_minutes")!])
-					: null,
-			locationName:
-				idx("location_name") !== undefined ? toString(row[idx("location_name")!]) : null,
-			address: idx("address") !== undefined ? toString(row[idx("address")!]) : null,
-			notes: idx("notes") !== undefined ? toString(row[idx("notes")!]) : null,
+			departedAt: toString(cell(row, headers, "departed_at")),
+			durationMinutes: toFiniteNumber(cell(row, headers, "duration_minutes")),
+			locationName: toString(cell(row, headers, "location_name")),
+			address: toString(cell(row, headers, "address")),
+			notes: toString(cell(row, headers, "notes")),
 		});
 	}
 	return visits;
 }
 
 function parsePoints(rows: string[][], headers: Map<string, number>): LocationPoint[] {
-	const idx = (key: string) => headers.get(key);
 	const points: LocationPoint[] = [];
 
 	for (let r = 1; r < rows.length; r++) {
-		const row = rows[r]!;
-		const timestamp = idx("timestamp") !== undefined ? row[idx("timestamp")!] : undefined;
-		const lat = idx("latitude") !== undefined ? toFiniteNumber(row[idx("latitude")!]) : null;
-		const lon = idx("longitude") !== undefined ? toFiniteNumber(row[idx("longitude")!]) : null;
+		const row = rows[r];
+		const timestamp = cell(row, headers, "timestamp");
+		const lat = toFiniteNumber(cell(row, headers, "latitude"));
+		const lon = toFiniteNumber(cell(row, headers, "longitude"));
 		if (!timestamp || lat === null || lon === null) continue;
 
-		const tsUnix =
-			idx("timestamp_unix") !== undefined
-				? toFiniteNumber(row[idx("timestamp_unix")!])
-				: null;
-		const isOutlier =
-			idx("is_outlier") !== undefined ? toBool(row[idx("is_outlier")!]) : false;
+		const tsUnix = toFiniteNumber(cell(row, headers, "timestamp_unix"));
+		const isOutlier = toBool(cell(row, headers, "is_outlier"));
 
 		points.push({
 			latitude: lat,
 			longitude: lon,
 			timestamp,
 			timestampUnix: tsUnix ?? undefined,
-			altitude:
-				idx("altitude") !== undefined ? toFiniteNumber(row[idx("altitude")!]) : null,
-			speed: idx("speed") !== undefined ? toFiniteNumber(row[idx("speed")!]) : null,
+			altitude: toFiniteNumber(cell(row, headers, "altitude")),
+			speed: toFiniteNumber(cell(row, headers, "speed")),
 			course: null,
-			horizontalAccuracy:
-				idx("horizontal_accuracy") !== undefined
-					? toFiniteNumber(row[idx("horizontal_accuracy")!])
-					: null,
+			horizontalAccuracy: toFiniteNumber(cell(row, headers, "horizontal_accuracy")),
 			verticalAccuracy: null,
 			isOutlier,
 		});
@@ -176,7 +167,7 @@ export function parseExportCSV(text: string): ExportShape {
 		throw new CSVParseError("CSV is empty");
 	}
 
-	const headerRow = rows[0]!;
+	const headerRow = rows[0];
 	const headers = buildHeaderMap(headerRow);
 
 	if (isVisitsCSV(headers)) {
