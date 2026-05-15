@@ -21,6 +21,10 @@ export class MapRenderChild extends MarkdownRenderChild {
 	private fullData: ExportShape | null = null;
 	private filter: FilterState = { ...DEFAULT_FILTER };
 	private hasFitInitial = false;
+	private resizeObserver: ResizeObserver | null = null;
+	private intersectionObserver: IntersectionObserver | null = null;
+	private layoutRefreshRaf: number | null = null;
+	private layoutRefreshTimers: number[] = [];
 
 	constructor(
 		containerEl: HTMLElement,
@@ -38,6 +42,7 @@ export class MapRenderChild extends MarkdownRenderChild {
 	}
 
 	onunload(): void {
+		this.disconnectLayoutWatchers();
 		if (this.map) {
 			this.map.remove();
 			this.map = null;
@@ -126,10 +131,83 @@ export class MapRenderChild extends MarkdownRenderChild {
 
 		this.applyFilter();
 
-		// Reading-view 0-height race fix: re-measure after layout settles.
-		window.requestAnimationFrame(() => {
-			this.map?.invalidateSize();
+		this.installLayoutWatchers(mapEl);
+		this.scheduleInitialLayoutRefresh();
+	}
+
+	private installLayoutWatchers(mapEl: HTMLElement): void {
+		this.disconnectLayoutWatchers();
+
+		if (typeof ResizeObserver !== "undefined") {
+			this.resizeObserver = new ResizeObserver(() => {
+				this.queueLayoutRefresh();
+			});
+			this.resizeObserver.observe(mapEl);
+			this.resizeObserver.observe(this.containerEl);
+		}
+
+		if (typeof IntersectionObserver !== "undefined") {
+			this.intersectionObserver = new IntersectionObserver((entries) => {
+				if (entries.some((entry) => entry.isIntersecting)) {
+					this.queueLayoutRefresh();
+				}
+			});
+			this.intersectionObserver.observe(mapEl);
+		}
+
+		this.registerDomEvent(window, "resize", () => {
+			this.queueLayoutRefresh();
 		});
+	}
+
+	private scheduleInitialLayoutRefresh(): void {
+		// Obsidian reading mode can finish code-block post-processing before the
+		// preview pane has reached its final width/visibility. Leaflet caches that
+		// early size, leaving only the top-left tiles painted until a later edit-mode
+		// toggle forces a reflow. Re-check for a short window so maps recover once
+		// the note, scroll container, and any surrounding callouts/layout settle.
+		this.queueLayoutRefresh();
+		for (const delay of [50, 150, 300, 600, 1000]) {
+			const timer = window.setTimeout(() => {
+				this.queueLayoutRefresh();
+			}, delay);
+			this.layoutRefreshTimers.push(timer);
+		}
+	}
+
+	private queueLayoutRefresh(): void {
+		if (!this.map || this.layoutRefreshRaf !== null) return;
+
+		this.layoutRefreshRaf = window.requestAnimationFrame(() => {
+			this.layoutRefreshRaf = null;
+			this.refreshMapLayout();
+		});
+	}
+
+	private refreshMapLayout(): void {
+		const map = this.map;
+		if (!map) return;
+
+		const rect = map.getContainer().getBoundingClientRect();
+		if (rect.width <= 0 || rect.height <= 0) return;
+
+		map.invalidateSize({ pan: false, debounceMoveend: true });
+	}
+
+	private disconnectLayoutWatchers(): void {
+		if (this.layoutRefreshRaf !== null) {
+			window.cancelAnimationFrame(this.layoutRefreshRaf);
+			this.layoutRefreshRaf = null;
+		}
+		for (const timer of this.layoutRefreshTimers) {
+			window.clearTimeout(timer);
+		}
+		this.layoutRefreshTimers = [];
+
+		this.resizeObserver?.disconnect();
+		this.resizeObserver = null;
+		this.intersectionObserver?.disconnect();
+		this.intersectionObserver = null;
 	}
 
 	private applyFilter(): void {
