@@ -8,14 +8,12 @@ Copy these code blocks into any Obsidian note after placing the example export f
 
 Drop the combined export and map everything at once:
 
-````markdown
 ```iso-me
-source: examples/san-francisco-combined.json
+source: san-francisco-combined.json
 title: San Francisco — May 4, 2026
 height: 500
 zoom: 13
 ```
-````
 
 ---
 
@@ -23,15 +21,13 @@ zoom: 13
 
 When you export visits and points as separate files, merge them with `sources:`:
 
-````markdown
 ```iso-me
 sources:
-  - examples/san-francisco-visits.json
-  - examples/san-francisco-points.json
+  - san-francisco-visits.json
+  - san-francisco-points.json
 title: SF — visits + track
 height: 500
 ```
-````
 
 ---
 
@@ -39,22 +35,18 @@ height: 500
 
 CSV files from iso.me are auto-detected by their header row:
 
-````markdown
 ```iso-me
-source: examples/commute-visits.csv
+source: commute-visits.csv
 title: Commute — Visits (CSV)
 height: 450
 ```
-````
 
-````markdown
 ```iso-me
-source: examples/commute-points.csv
+source: commute-points.csv
 title: Commute — GPS Points (CSV)
 height: 450
 show_outliers: true
 ```
-````
 
 ---
 
@@ -62,23 +54,19 @@ show_outliers: true
 
 Markdown exports work the same way — the plugin detects the H1 heading:
 
-````markdown
 ```iso-me
-source: examples/san-francisco-visits.md
+source: san-francisco-visits.md
 title: SF Visits (Markdown)
 height: 450
 ```
-````
 
-````markdown
 ```iso-me
-source: examples/commute-points.md
+source: commute-points.md
 title: Commute Points (Markdown)
 height: 450
 show_routes: true
 show_outliers: true
 ```
-````
 
 ---
 
@@ -86,14 +74,12 @@ show_outliers: true
 
 OwnTracks `.json` files are detected by their `_type: "location"` structure. These are points-only — no visits:
 
-````markdown
 ```iso-me
-source: examples/owntracks-commute.json
+source: owntracks-commute.json
 title: Commute (OwnTracks)
 height: 450
 show_routes: true
 ```
-````
 
 > **Note:** OwnTracks `vel` is km/h — the plugin converts to m/s internally. No visits are rendered.
 
@@ -103,14 +89,12 @@ show_routes: true
 
 Overland `.json` files are detected by their `{ locations: [...] }` GeoJSON structure. Also points-only:
 
-````markdown
 ```iso-me
-source: examples/overland-commute.json
+source: overland-commute.json
 title: Commute (Overland)
 height: 450
 show_routes: true
 ```
-````
 
 > **Note:** Overland coordinates use `[longitude, latitude]` ordering. The plugin normalizes them.
 
@@ -120,16 +104,14 @@ show_routes: true
 
 GPX files render visits from `<wpt>` elements and routes from `<trk>/<trkpt>` elements. The combined example includes both:
 
-````markdown
 ```iso-me
-source: examples/san-francisco-day.gpx
+source: san-francisco-day.gpx
 title: San Francisco Day (GPX)
 height: 500
 zoom: 13
 show_visits: true
 show_routes: true
 ```
-````
 
 ---
 
@@ -137,14 +119,12 @@ show_routes: true
 
 Add `interactive: true` to get a day picker and time-of-day slider:
 
-````markdown
 ```iso-me
-source: examples/san-francisco-combined.json
+source: san-francisco-combined.json
 title: Interactive Map
 height: 500
 interactive: true
 ```
-````
 
 ---
 
@@ -170,33 +150,25 @@ interactive: true
 
 Set an **Exports folder** in plugin settings, then use:
 
-```markdown
 ```iso-me
 source: today
 title: Where I went today
 ```
-```
 
-```markdown
 ```iso-me
 source: yesterday
 title: Yesterday's data
 ```
-```
 
-```markdown
 ```iso-me
 source: 2026-05-04
 title: May 4, 2026
 ```
-```
 
-```markdown
 ```iso-me
 source: last 7 days
 title: This week
 interactive: true
-```
 ```
 
 ---
@@ -205,19 +177,15 @@ interactive: true
 
 When iso.me's **One file per day** toggle is on, load all files at once:
 
-```markdown
 ```iso-me
 source: exports/may-2026/
 title: May 2026
 interactive: true
 ```
-```
 
 Or use a glob to match specific naming patterns:
 
-```markdown
 ```iso-me
 source: exports/iso.me*all*.json
 title: All combined day files
-```
 ```
