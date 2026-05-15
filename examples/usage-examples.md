@@ -30,7 +30,6 @@ sources:
   - examples/san-francisco-points.json
 title: SF — visits + track
 height: 500
-show_heatmap: true
 ```
 ````
 
@@ -53,7 +52,6 @@ height: 450
 source: examples/commute-points.csv
 title: Commute — GPS Points (CSV)
 height: 450
-show_heatmap: true
 show_outliers: true
 ```
 ````
@@ -94,7 +92,6 @@ source: examples/owntracks-commute.json
 title: Commute (OwnTracks)
 height: 450
 show_routes: true
-show_heatmap: false
 ```
 ````
 
@@ -112,7 +109,6 @@ source: examples/overland-commute.json
 title: Commute (Overland)
 height: 450
 show_routes: true
-show_heatmap: true
 ```
 ````
 
@@ -132,7 +128,6 @@ height: 500
 zoom: 13
 show_visits: true
 show_routes: true
-show_heatmap: true
 ```
 ````
 
@@ -165,9 +160,8 @@ interactive: true
 | `center` | `[lat, lon]` | `[0, 0]` | Starting center point |
 | `show_visits` | boolean | `true` | Show visit markers |
 | `show_routes` | boolean | `true` | Show route polylines |
-| `show_heatmap` | boolean | `false` | Show heatmap overlay |
 | `show_outliers` | boolean | `false` | Show GPS glitch markers |
-| `show_stats` | boolean | `true` | Show the summary stats bar |
+| `show_stats` | boolean | `false` | Show the summary stats bar |
 | `interactive` | boolean | `false` | Show day/time filter controls |
 
 ---

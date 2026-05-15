@@ -4,7 +4,7 @@
 
 Render interactive Leaflet maps inline in Obsidian notes from [iso.me](https://apps.apple.com/us/app/iso-me/id6761960794) exports and compatible location-tracking formats.
 
-The plugin registers an Obsidian Markdown code block named `iso-me`. Add a fenced block to any note, point it at one or more export files in your vault, and the plugin renders visits, routes, heatmaps, outliers, stats, and optional interactive filters.
+The plugin registers an Obsidian Markdown code block named `iso-me`. Add a fenced block to any note, point it at one or more export files in your vault, and the plugin renders visits, routes, outliers, stats, and optional interactive filters.
 
 ---
 
@@ -33,8 +33,7 @@ show_routes: true
 
 - **Visit markers** — duration-encoded circle markers. Longer stays are larger and more opaque. Popups show place name, address, arrival/departure time, duration, and notes when available.
 - **Route polylines** — connected GPS tracks with green start marker, red end marker, and route popup showing path distance and straight-line distance.
-- **Heatmap overlay** — density visualization of clean GPS points.
-- **GPS glitch / outlier markers** — optional scatter markers for points flagged as outliers by iso.me. Outliers are hidden by default and are always excluded from routes and heatmaps.
+- **GPS glitch / outlier markers** — optional scatter markers for points flagged as outliers by iso.me. Outliers are hidden by default and are always excluded from routes, route distance, and average speed.
 - **Stats bar** — export format badge, visit count, point count, distance, average speed, date range, and top repeated place.
 - **Interactive filters** — optional day selector and time-of-day range slider.
 
@@ -150,9 +149,8 @@ zoom: 12
 center: [37.7749, -122.4194]
 show_visits: true
 show_routes: true
-show_heatmap: false
 show_outliers: false
-show_stats: true
+show_stats: false
 interactive: false
 title: April trip
 ```
@@ -168,10 +166,9 @@ title: April trip
 | `center` | `[latitude, longitude]` | No | plugin default center (`[0, 0]`) | Initial/fallback center when no visible layer provides bounds. |
 | `show_visits` | boolean | No | plugin **Show visit markers by default** (`true`) | Shows visit/stay markers when the export contains visits. |
 | `show_routes` | boolean | No | plugin **Show routes by default** (`true`) | Shows GPS route polylines when the export contains points. Outliers are excluded. |
-| `show_heatmap` | boolean | No | plugin **Show heatmap by default** (`false`) | Shows a heatmap from clean GPS points. Outliers are excluded. |
 | `show_outliers` | boolean | No | plugin **Show GPS glitches by default** (`false`) | Shows points flagged as outliers / GPS glitches. |
-| `show_stats` | boolean | No | `true` | Shows the stats bar above the map. This is per-block only; there is no settings-tab default for stats. |
-| `interactive` | boolean | No | `false` | Shows day and time-of-day filters above the map. Filters re-render visits, routes, heatmap, and outliers. |
+| `show_stats` | boolean | No | `false` | Shows the stats bar above the map. This is per-block only; there is no settings-tab default for stats. |
+| `interactive` | boolean | No | `false` | Shows day and time-of-day filters above the map. Filters re-render visits, routes, and outliers. |
 
 ### Parameter syntax rules
 
@@ -410,11 +407,8 @@ Tile setting changes apply to newly rendered maps. Already-open notes may need t
 | Route color | `routeColor` | `#2563eb` | Polyline color for routes. |
 | Visit marker color | `markerColor` | `#2dd4bf` | Circle marker color for visits. |
 | GPS glitch color | `outlierColor` | `#f59e0b` | Marker color for outliers when shown. |
-| Heatmap radius | `heatRadius` | `25` | Leaflet.heat radius in pixels. |
-| Heatmap blur | `heatBlur` | `15` | Leaflet.heat blur in pixels. |
 | Show visit markers by default | `showVisitsByDefault` | `true` | Default for `show_visits`. |
 | Show routes by default | `showRoutesByDefault` | `true` | Default for `show_routes`. |
-| Show heatmap by default | `showHeatmapByDefault` | `false` | Default for `show_heatmap`. |
 | Show GPS glitches by default | `showOutliersByDefault` | `false` | Default for `show_outliers`. |
 
 ---
@@ -761,22 +755,16 @@ xmlns:isome="https://isome.isolated.tech/gpx/1.0"
 - Routes with more than 1,500 points are visually downsampled for rendering performance, but popup path distance is computed from the full clean point set.
 - Single-point routes render as one point marker.
 
-### Heatmap
-
-- Heatmap uses clean, non-outlier points only.
-- Radius and blur come from plugin settings.
-- Heatmap intensity is currently uniform per point.
-
 ### Outliers
 
 - Outliers are points where `isOutlier` is true.
 - They are hidden by default.
 - When shown, they render as small markers with a timestamp popup.
-- They never contribute to routes, heatmaps, route distance, or average speed.
+- They never contribute to routes, route distance, or average speed.
 
 ### Stats bar
 
-The stats bar is best-effort and never blocks map rendering. It summarizes the loaded export data:
+The stats bar is hidden by default. Add `show_stats: true` to a map block to display it. It is best-effort and never blocks map rendering. It summarizes the loaded export data:
 
 - Detected format
 - Visit count
@@ -824,7 +812,6 @@ interactive: true
 source: last 30 days
 title: Last 30 days
 height: 600
-show_heatmap: true
 interactive: true
 ```
 ````
@@ -858,19 +845,6 @@ interactive: true
 ```iso-me
 source: exports/iso.me*all*.json
 title: Combined daily exports
-```
-````
-
-### Heatmap only
-
-````markdown
-```iso-me
-source: exports/month.json
-title: Density map
-show_visits: false
-show_routes: false
-show_heatmap: true
-show_stats: true
 ```
 ````
 
@@ -942,13 +916,13 @@ use:
 
 Make sure the export includes coordinates. Visit rows without latitude and longitude are skipped.
 
-### Routes or heatmaps do not appear
+### Routes do not appear
 
-Make sure the export includes location points. Visit-only exports can show visit markers but cannot render routes or heatmaps.
+Make sure the export includes location points. Visit-only exports can show visit markers but cannot render routes.
 
 ### Outliers do not affect routes
 
-This is intentional. Outliers are always excluded from routes, heatmaps, distance, and average speed.
+This is intentional. Outliers are always excluded from routes, distance, and average speed.
 
 ### OpenStreetMap tiles are blank on desktop
 

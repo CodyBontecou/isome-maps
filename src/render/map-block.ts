@@ -10,7 +10,6 @@ import {
 	filterData,
 	FilterState,
 } from "./controls";
-import { renderHeatLayer } from "./heatmap";
 import { renderOutlierMarkers } from "./outliers";
 import { renderRoutePolyline } from "./routes";
 import { computeStats, renderStatsBar } from "./stats-bar";
@@ -98,7 +97,7 @@ export class MapRenderChild extends MarkdownRenderChild {
 			}, data.detectedFormat);
 		}
 
-		if (this.cfg.show_stats ?? true) {
+		if (this.cfg.show_stats ?? false) {
 			// Render stats bar above the map (non-critical — swallow errors gracefully)
 			try {
 				const stats = computeStats(data);
@@ -145,7 +144,6 @@ export class MapRenderChild extends MarkdownRenderChild {
 
 			const showVisits = this.cfg.show_visits ?? this.settings.showVisitsByDefault;
 			const showRoutes = this.cfg.show_routes ?? this.settings.showRoutesByDefault;
-			const showHeatmap = this.cfg.show_heatmap ?? this.settings.showHeatmapByDefault;
 			const showOutliers =
 				this.cfg.show_outliers ?? this.settings.showOutliersByDefault;
 
@@ -164,18 +162,6 @@ export class MapRenderChild extends MarkdownRenderChild {
 				bounds.push(
 					...renderRoutePolyline(target, cleanPoints, this.settings.routeColor),
 				);
-			}
-
-			if (showHeatmap && cleanPoints.length > 0) {
-				renderHeatLayer(
-					target,
-					cleanPoints,
-					this.settings.heatRadius,
-					this.settings.heatBlur,
-				);
-				if (!showRoutes) {
-					for (const p of cleanPoints) bounds.push([p.latitude, p.longitude]);
-				}
 			}
 
 			if (showOutliers && outlierPoints.length > 0) {

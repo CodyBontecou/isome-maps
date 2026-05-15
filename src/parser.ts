@@ -3,7 +3,6 @@ import { BlockConfig } from "./types";
 const BOOL_KEYS = new Set([
 	"show_visits",
 	"show_routes",
-	"show_heatmap",
 	"show_outliers",
 	"show_stats",
 	"interactive",
@@ -94,7 +93,6 @@ export function parseBlockConfig(source: string): BlockConfig {
 			if (b !== undefined) {
 				if (key === "show_visits") cfg.show_visits = b;
 				else if (key === "show_routes") cfg.show_routes = b;
-				else if (key === "show_heatmap") cfg.show_heatmap = b;
 				else if (key === "show_outliers") cfg.show_outliers = b;
 				else if (key === "show_stats") cfg.show_stats = b;
 				else if (key === "interactive") cfg.interactive = b;

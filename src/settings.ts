@@ -82,11 +82,8 @@ export interface IsoMeSettings {
 	markerColor: string;
 	routeColor: string;
 	outlierColor: string;
-	heatRadius: number;
-	heatBlur: number;
 	showVisitsByDefault: boolean;
 	showRoutesByDefault: boolean;
-	showHeatmapByDefault: boolean;
 	showOutliersByDefault: boolean;
 }
 
@@ -110,11 +107,8 @@ export const DEFAULT_SETTINGS: IsoMeSettings = {
 	markerColor: "#2dd4bf",
 	routeColor: "#2563eb",
 	outlierColor: "#f59e0b",
-	heatRadius: 25,
-	heatBlur: 15,
 	showVisitsByDefault: true,
 	showRoutesByDefault: true,
-	showHeatmapByDefault: false,
 	showOutliersByDefault: false,
 };
 
@@ -307,34 +301,6 @@ export class IsoMeSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Heatmap radius")
-			.addText((t) =>
-				t
-					.setValue(String(this.plugin.settings.heatRadius))
-					.onChange(async (v) => {
-						const n = Number(v);
-						if (Number.isFinite(n) && n > 0) {
-							this.plugin.settings.heatRadius = n;
-							await this.plugin.saveSettings();
-						}
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Heatmap blur")
-			.addText((t) =>
-				t
-					.setValue(String(this.plugin.settings.heatBlur))
-					.onChange(async (v) => {
-						const n = Number(v);
-						if (Number.isFinite(n) && n >= 0) {
-							this.plugin.settings.heatBlur = n;
-							await this.plugin.saveSettings();
-						}
-					}),
-			);
-
-		new Setting(containerEl)
 			.setName("Show visit markers by default")
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.showVisitsByDefault).onChange(async (v) => {
@@ -353,18 +319,9 @@ export class IsoMeSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Show heatmap by default")
-			.addToggle((t) =>
-				t.setValue(this.plugin.settings.showHeatmapByDefault).onChange(async (v) => {
-					this.plugin.settings.showHeatmapByDefault = v;
-					await this.plugin.saveSettings();
-				}),
-			);
-
-		new Setting(containerEl)
 			.setName("Show GPS glitches (outliers) by default")
 			.setDesc(
-				"Render points iso.me has flagged as outliers as small scatter dots. Outliers are always excluded from the route polyline and heatmap.",
+				"Render points iso.me has flagged as outliers as small scatter dots. Outliers are always excluded from route polylines, route distance, and average speed.",
 			)
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.showOutliersByDefault).onChange(async (v) => {
