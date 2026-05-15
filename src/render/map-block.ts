@@ -144,8 +144,7 @@ export class MapRenderChild extends MarkdownRenderChild {
 
 			const showVisits = this.cfg.show_visits ?? this.settings.showVisitsByDefault;
 			const showRoutes = this.cfg.show_routes ?? this.settings.showRoutesByDefault;
-			const showOutliers =
-				this.cfg.show_outliers ?? this.settings.showOutliersByDefault;
+			const showOutliers = this.settings.showOutliersByDefault;
 
 			const visits = showVisits && filtered.visits ? filtered.visits : [];
 			const allPoints = filtered.points ?? [];

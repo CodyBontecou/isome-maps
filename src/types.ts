@@ -41,7 +41,6 @@ export interface BlockConfig {
 	height?: number;
 	show_visits?: boolean;
 	show_routes?: boolean;
-	show_outliers?: boolean;
 	show_stats?: boolean;
 	interactive?: boolean;
 	title?: string;

@@ -149,7 +149,6 @@ zoom: 12
 center: [37.7749, -122.4194]
 show_visits: true
 show_routes: true
-show_outliers: false
 show_stats: false
 interactive: false
 title: April trip
@@ -166,7 +165,6 @@ title: April trip
 | `center` | `[latitude, longitude]` | No | plugin default center (`[0, 0]`) | Initial/fallback center when no visible layer provides bounds. |
 | `show_visits` | boolean | No | plugin **Show visit markers by default** (`true`) | Shows visit/stay markers when the export contains visits. |
 | `show_routes` | boolean | No | plugin **Show routes by default** (`true`) | Shows GPS route polylines when the export contains points. Outliers are excluded. |
-| `show_outliers` | boolean | No | plugin **Show GPS glitches by default** (`false`) | Shows points flagged as outliers / GPS glitches. |
 | `show_stats` | boolean | No | `false` | Shows the stats bar above the map. This is per-block only; there is no settings-tab default for stats. |
 | `interactive` | boolean | No | `false` | Shows day and time-of-day filters above the map. Filters re-render visits, routes, and outliers. |
 
@@ -409,7 +407,7 @@ Tile setting changes apply to newly rendered maps. Already-open notes may need t
 | GPS glitch color | `outlierColor` | `#f59e0b` | Marker color for outliers when shown. |
 | Show visit markers by default | `showVisitsByDefault` | `true` | Default for `show_visits`. |
 | Show routes by default | `showRoutesByDefault` | `true` | Default for `show_routes`. |
-| Show GPS glitches by default | `showOutliersByDefault` | `false` | Default for `show_outliers`. |
+| Show GPS glitches by default | `showOutliersByDefault` | `false` | Controls whether points flagged as outliers / GPS glitches are shown. |
 
 ---
 

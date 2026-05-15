@@ -45,7 +45,6 @@ height: 450
 source: commute-points.csv
 title: Commute — GPS Points (CSV)
 height: 450
-show_outliers: true
 ```
 
 ---
@@ -65,7 +64,6 @@ source: commute-points.md
 title: Commute Points (Markdown)
 height: 450
 show_routes: true
-show_outliers: true
 ```
 
 ---
@@ -140,7 +138,6 @@ interactive: true
 | `center` | `[lat, lon]` | `[0, 0]` | Starting center point |
 | `show_visits` | boolean | `true` | Show visit markers |
 | `show_routes` | boolean | `true` | Show route polylines |
-| `show_outliers` | boolean | `false` | Show GPS glitch markers |
 | `show_stats` | boolean | `false` | Show the summary stats bar |
 | `interactive` | boolean | `false` | Show day/time filter controls |
 
