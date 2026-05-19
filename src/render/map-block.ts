@@ -188,10 +188,20 @@ export class MapRenderChild extends MarkdownRenderChild {
 		const map = this.map;
 		if (!map) return;
 
-		const rect = map.getContainer().getBoundingClientRect();
-		if (rect.width <= 0 || rect.height <= 0) return;
+		if (!this.hasUsableMapSize(map)) return;
 
 		map.invalidateSize({ pan: false, debounceMoveend: true });
+
+		// If the initial bounds fit was attempted while Obsidian had the map in a
+		// hidden/zero-sized layout, retry it once the container becomes measurable.
+		if (!this.hasFitInitial) {
+			this.applyFilter();
+		}
+	}
+
+	private hasUsableMapSize(map: L.Map): boolean {
+		const rect = map.getContainer().getBoundingClientRect();
+		return rect.width > 0 && rect.height > 0;
 	}
 
 	private disconnectLayoutWatchers(): void {
@@ -247,7 +257,7 @@ export class MapRenderChild extends MarkdownRenderChild {
 				);
 			}
 
-			if (bounds.length === 0) {
+			if (bounds.length === 0 || this.cfg.auto_fit === false) {
 				if (!this.hasFitInitial) {
 					const center = this.cfg.center ?? this.settings.defaultCenter;
 					map.setView(center, this.cfg.zoom ?? this.settings.defaultZoom);
@@ -256,13 +266,18 @@ export class MapRenderChild extends MarkdownRenderChild {
 				return;
 			}
 
+			if (!this.hasUsableMapSize(map)) {
+				// Leaflet needs a real container size to calculate a bounds-based zoom.
+				// Obsidian can render post-processors before the pane is visible, so leave
+				// the initial fit pending for the layout watcher instead of falling back to
+				// the configured/default home center.
+				return;
+			}
+
 			if (bounds.length === 1) {
 				map.setView(bounds[0], this.cfg.zoom ?? 14);
 			} else {
 				map.fitBounds(L.latLngBounds(bounds), { padding: [20, 20] });
-				if (!this.hasFitInitial && this.cfg.zoom != null) {
-					map.setZoom(this.cfg.zoom);
-				}
 			}
 			this.hasFitInitial = true;
 		} catch {

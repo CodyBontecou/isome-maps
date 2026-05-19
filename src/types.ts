@@ -43,5 +43,6 @@ export interface BlockConfig {
 	show_routes?: boolean;
 	show_stats?: boolean;
 	interactive?: boolean;
+	auto_fit?: boolean;
 	title?: string;
 }

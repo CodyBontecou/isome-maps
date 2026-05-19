@@ -5,6 +5,7 @@ const BOOL_KEYS = new Set([
 	"show_routes",
 	"show_stats",
 	"interactive",
+	"auto_fit",
 ]);
 const NUMBER_KEYS = new Set(["zoom", "height"]);
 
@@ -94,6 +95,7 @@ export function parseBlockConfig(source: string): BlockConfig {
 				else if (key === "show_routes") cfg.show_routes = b;
 				else if (key === "show_stats") cfg.show_stats = b;
 				else if (key === "interactive") cfg.interactive = b;
+				else if (key === "auto_fit") cfg.auto_fit = b;
 			}
 		}
 	}

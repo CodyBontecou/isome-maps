@@ -135,6 +135,8 @@ interactive: true
 
 With `exportsFolder = exports`, `source: yesterday` searches the `exports/` folder for a file matching yesterday's date.
 
+By default, maps automatically center and zoom to the visible visits/routes/outliers in the loaded export. If you prefer a fixed initial viewport, add `auto_fit: false` plus your desired `center` and `zoom`.
+
 ---
 
 ## Complete code block parameter reference
@@ -151,6 +153,7 @@ show_visits: true
 show_routes: true
 show_stats: false
 interactive: false
+auto_fit: true
 title: April trip
 ```
 ````
@@ -161,8 +164,9 @@ title: April trip
 | `sources` | list of paths/folders/globs/date keywords | Yes, unless `source` is set | — | Loads multiple sources and merges them into one map. Useful for separate visits + points exports or one-file-per-day batches. |
 | `title` | string | No | none | Heading displayed above the map. Quotes are optional. |
 | `height` | number | No | plugin **Default map height** (`400`) | Map height in pixels. |
-| `zoom` | number | No | plugin **Default zoom** (`11`) | Initial/fallback zoom. If the export has multiple mappable coordinates, the map normally fits bounds; `zoom` can override the initial fit zoom. |
-| `center` | `[latitude, longitude]` | No | plugin default center (`[0, 0]`) | Initial/fallback center when no visible layer provides bounds. |
+| `zoom` | number | No | plugin **Default zoom** (`11`) | Initial/fallback zoom. If `auto_fit` is enabled and the export has one mappable coordinate, this zoom is used; multiple coordinates auto-fit the visible bounds. |
+| `center` | `[latitude, longitude]` | No | plugin default center (`[0, 0]`) | Initial/fallback center when no visible layer provides bounds, or when `auto_fit: false`. |
+| `auto_fit` | boolean | No | `true` | Automatically centers and zooms to the visible visits/routes/outliers. Set to `false` to use `center` and `zoom` instead. |
 | `show_visits` | boolean | No | plugin **Show visit markers by default** (`true`) | Shows visit/stay markers when the export contains visits. |
 | `show_routes` | boolean | No | plugin **Show routes by default** (`true`) | Shows GPS route polylines when the export contains points. Outliers are excluded. |
 | `show_stats` | boolean | No | `false` | Shows the stats bar above the map. This is per-block only; there is no settings-tab default for stats. |
@@ -800,6 +804,21 @@ source: yesterday
 title: Yesterday's movement
 height: 450
 interactive: true
+```
+````
+
+### Fixed center and zoom
+
+Auto-fit is enabled by default. To always open the map at a specific place and zoom level, opt out with `auto_fit: false`:
+
+````markdown
+```iso-me
+source: yesterday
+title: Yesterday near home
+height: 450
+auto_fit: false
+center: [37.7749, -122.4194]
+zoom: 12
 ```
 ````
 
