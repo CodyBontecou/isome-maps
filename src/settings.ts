@@ -1,4 +1,11 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
+import {
+	DEFAULT_CUSTOM_EXPORT_FOLDER_PATH_TEMPLATE,
+	EXPORT_FOLDER_PATH_TEMPLATE_VARIABLES,
+	ExportFolderGranularity,
+	normalizeExportFolderPathTemplate,
+	normalizeVaultFolder,
+} from "./export-layout";
 import type IsoMeMapsPlugin from "./main";
 
 export type TileProviderId =
@@ -76,6 +83,8 @@ export interface IsoMeSettings {
 	exportsFolder: string;
 	exportFilenamePattern: string;
 	exportDateFormat: string;
+	exportFolderGranularity: ExportFolderGranularity;
+	exportFolderCustomPathTemplate: string;
 	defaultHeight: number;
 	defaultCenter: [number, number];
 	defaultZoom: number;
@@ -101,6 +110,8 @@ export const DEFAULT_SETTINGS: IsoMeSettings = {
 	exportsFolder: "",
 	exportFilenamePattern: "*{date}*",
 	exportDateFormat: "YYYY-MM-DD",
+	exportFolderGranularity: "flat",
+	exportFolderCustomPathTemplate: DEFAULT_CUSTOM_EXPORT_FOLDER_PATH_TEMPLATE,
 	defaultHeight: 400,
 	defaultCenter: [0, 0],
 	defaultZoom: 11,
@@ -193,22 +204,63 @@ export class IsoMeSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Exports folder")
 			.setDesc(
-				"Vault-relative folder holding your iso.me exports (e.g. `exports`). Bare `source:` filenames in code blocks are looked up here, and date keywords like `today` / `yesterday` search this folder.",
+				"Vault-relative root folder holding your iso.me exports (e.g. `exports`). Bare `source:` filenames in code blocks are looked up here, and date keywords like `today` / `yesterday` search this folder plus the nested structure below.",
 			)
 			.addText((t) =>
 				t
 					.setPlaceholder("exports")
 					.setValue(this.plugin.settings.exportsFolder)
 					.onChange(async (v) => {
-						this.plugin.settings.exportsFolder = v.trim().replace(/\/+$/, "");
+						this.plugin.settings.exportsFolder = normalizeVaultFolder(v);
 						await this.plugin.saveSettings();
 					}),
 			);
 
 		new Setting(containerEl)
-			.setName("Export filename pattern")
+			.setName("Export folder structure")
 			.setDesc(
-				"Glob template used to find an export by date. `{date}` is replaced with the resolved date (formatted using the date format below). `*` and `?` work as wildcards. Default `*{date}*` matches any iso.me export filename containing the date.",
+				"Opt in to nested export folders. Flat keeps existing behavior. Nested choices also keep flat files under the exports folder loadable for gradual migrations.",
+			)
+			.addDropdown((dd) =>
+				dd
+					.addOption("flat", "Flat (exports/file.json)")
+					.addOption("year", "Year folders (exports/YYYY/file.json)")
+					.addOption("month", "Month folders (exports/YYYY/MM/file.json)")
+					.addOption("week", "Week folders (exports/YYYY/W23/file.json)")
+					.addOption("day", "Day folders (exports/YYYY/MM/DD/file.json)")
+					.addOption("custom", "Custom template")
+					.setValue(this.plugin.settings.exportFolderGranularity)
+					.onChange(async (v) => {
+						this.plugin.settings.exportFolderGranularity =
+							v as ExportFolderGranularity;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		const folderTemplateVariables = EXPORT_FOLDER_PATH_TEMPLATE_VARIABLES
+			.map((v) => `{${v}}`)
+			.join(", ");
+
+		new Setting(containerEl)
+			.setName("Custom folder path template")
+			.setDesc(
+				`Used when Export folder structure is Custom. Use / for folders. Variables: ${folderTemplateVariables}. iso.me's DATED preset uses {year}/{year}-{month}.`,
+			)
+			.addText((t) =>
+				t
+					.setPlaceholder(DEFAULT_CUSTOM_EXPORT_FOLDER_PATH_TEMPLATE)
+					.setValue(this.plugin.settings.exportFolderCustomPathTemplate)
+					.onChange(async (v) => {
+						this.plugin.settings.exportFolderCustomPathTemplate =
+							normalizeExportFolderPathTemplate(v);
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Export filename/path pattern")
+			.setDesc(
+				"Glob template used to find an export by date. Supports iso.me filename tokens like `{date}`, `{year}`, `{month}`, `{day}`, `{type}`, and `{format}`; `{type}`, `{format}`, time, and unknown tokens become wildcards. You can include folders here (e.g. `{year}/{year}-{month}/Daily Track - {date}`) or use the folder structure setting above. Default `*{date}*` matches any export filename containing the date.",
 			)
 			.addText((t) =>
 				t

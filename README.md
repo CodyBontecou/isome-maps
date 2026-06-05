@@ -95,11 +95,11 @@ In the iso.me iOS app, export the data you want to map. Recommended options:
 - Use **JSON** for the simplest one-file workflow.
 - Use a combined export containing both **visits** and **points** when possible.
 - If exporting CSV or Markdown visits, enable **Coordinates** in iso.me export options. Visits without latitude/longitude cannot be plotted.
-- If using **One file per day**, place all generated files in a single vault folder and use a folder source, glob source, or date keyword.
+- If using **One file per day**, place files in a flat folder or use iso.me v1.5's filename templates with `/` folder separators. The plugin can search nested year/month/week/day/custom folder layouts.
 
 ### 3. Put exports in your vault
 
-A common layout is:
+A common flat layout is:
 
 ```text
 Your vault/
@@ -107,6 +107,17 @@ Your vault/
   exports/
     iso.me - Monday 2026-05-04 - all.json
     iso.me - Tuesday 2026-05-05 - all.json
+```
+
+A nested iso.me v1.5 layout can also work:
+
+```text
+Your vault/
+  exports/
+    2026/
+      2026-05/
+        Daily Track - 2026-05-04.json
+        Daily Track - 2026-05-05.json
 ```
 
 ### 4. Configure plugin settings
@@ -118,7 +129,9 @@ Recommended first-time settings:
 | Setting | Suggested value | Why |
 |---|---:|---|
 | **Exports folder** | `exports` | Lets you write `source: yesterday` or `source: filename.json` instead of full paths. |
-| **Export filename pattern** | `*{date}*` | Matches any file containing the resolved date. |
+| **Export folder structure** | `Flat` | Keeps backwards-compatible flat folder lookup. Switch to `Custom template` for iso.me v1.5 dated folders. |
+| **Custom folder path template** | `{year}/{year}-{month}` | Matches iso.me's DATED preset folder layout when folder structure is `Custom template`. |
+| **Export filename/path pattern** | `*{date}*` | Matches any file containing the resolved date. |
 | **Export date format** | `YYYY-MM-DD` | Matches iso.me's default date format in filenames. |
 | **Tile provider** | CartoDB Voyager | Works in desktop and mobile Obsidian. |
 
@@ -250,8 +263,8 @@ A source can be any of the following:
 |---|---|---|
 | File path | `source: exports/day.json` | Loads that vault-relative file. |
 | Bare filename | `source: day.json` | If **Exports folder** is set, loads `exports/day.json`; otherwise loads from the vault root. |
-| Folder | `source: exports/may/` | Loads every supported export file inside that folder. |
-| Glob | `source: exports/iso.me*.json` | Loads every supported file in the literal directory whose filename matches the glob. |
+| Folder | `source: exports/may/` | Loads every supported export file inside that folder. In nested folder modes, scans the configured subfolder depth too. |
+| Glob | `source: exports/iso.me*.json` | Loads every supported file whose filename or nested relative path matches the glob. Use `**` for explicit recursive globs. |
 | Date keyword | `source: yesterday` | Resolves to one or more date-based glob searches using the settings below. |
 
 Supported file extensions are:
@@ -305,19 +318,22 @@ interactive: true
 
 ### Date keyword settings
 
-Date keywords use three settings:
+Date keywords use these settings:
 
 | Setting | Default | Description |
 |---|---|---|
-| **Exports folder** | empty | Vault-relative folder to search, for example `exports`. |
-| **Export filename pattern** | `*{date}*` | Glob template used to find files for a resolved date. `{date}` is replaced with the formatted date. |
-| **Export date format** | `YYYY-MM-DD` | Format used when inserting dates into the filename pattern. Supported tokens: `YYYY`, `MM`, `DD`. |
+| **Exports folder** | empty | Vault-relative root folder to search, for example `exports`. |
+| **Export folder structure** | `Flat` | Optional nested layout for date lookups and folder sources. Choices: Flat, Year, Month, Week, Day, Custom template. |
+| **Custom folder path template** | `{year}/{year}-{month}` | Used when folder structure is Custom. Supports `/` separators and date variables such as `{year}`, `{month}`, `{week}`, `{dayNumber}`, `{date}`, `{weekday}`, `{monthName}`, `{quarter}`, and iso.me's `{day}` weekday token. |
+| **Export filename/path pattern** | `*{date}*` | Glob template used to find files for a resolved date. May be a filename only or include folders. Date tokens are replaced before matching. |
+| **Export date format** | `YYYY-MM-DD` | Format used when inserting `{date}` into the pattern/template. Supported tokens: `YYYY`, `MM`, `DD`. |
 
-With these settings:
+With these flat-folder settings:
 
 ```text
 Exports folder: exports
-Export filename pattern: *{date}*
+Export folder structure: Flat
+Export filename/path pattern: *{date}*
 Export date format: YYYY-MM-DD
 ```
 
@@ -342,6 +358,30 @@ exports/iso.me - Friday 2026-05-08 - all.json
 exports/isome_complete_export_2026-05-08_121042.json
 ```
 
+For iso.me v1.5's **DATED** filename preset, use either the nested folder setting:
+
+```text
+Exports folder: exports
+Export folder structure: Custom template
+Custom folder path template: {year}/{year}-{month}
+Export filename/path pattern: *{date}*
+```
+
+`source: yesterday` then searches both of these, so older flat exports still work while you migrate:
+
+```text
+exports/2026/2026-05/*2026-05-08*
+exports/*2026-05-08*
+```
+
+You can also paste a full iso.me filename template into the filename/path pattern and leave folder structure as Flat:
+
+```text
+Export filename/path pattern: {year}/{year}-{month}/Daily Track - {date}
+```
+
+When a date pattern has no wildcard and no supported extension, the plugin treats it as a prefix so app templates without `.json` / `.csv` / `.md` / `.gpx` still match exported files.
+
 ### Filename pattern examples
 
 | Pattern | Matches |
@@ -351,14 +391,19 @@ exports/isome_complete_export_2026-05-08_121042.json
 | `*{date}*visits*` | Visit-only per-day files. |
 | `*{date}*points*` | Point-only per-day files. |
 | `daily-{date}.json` | Exact-style filenames like `daily-2026-05-04.json`. |
+| `iso.me - {day} {date} - {type}` | iso.me's readable template; `{day}` becomes the weekday and `{type}` matches visits / points / all. |
+| `isome_{type}_{datetime}` | iso.me's compact template; `{datetime}` matches the export date plus any export time. |
+| `{year}/{year}-{month}/Daily Track - {date}` | iso.me's dated nested-folder template. |
 
-If the pattern does not contain `{date}`, the plugin appends `*<date>*` to the pattern internally.
+If the pattern does not contain a date-aware token, the plugin appends `*<date>*` internally.
 
 ### Glob rules
 
-- `*` matches any characters within a filename component.
-- `?` matches one character within a filename component.
-- Wildcards are supported in the filename only; the directory path must be literal.
+- `*` matches any characters within a single path component.
+- `?` matches one character within a single path component.
+- `**` matches across nested folders for explicit recursive globs such as `exports/**/*.json`.
+- Folder sources obey **Export folder structure**: `Flat` scans direct files only; nested modes scan to the configured depth and still include direct files.
+- Date keyword lookups in nested modes also try the flat path as a backwards-compatible fallback.
 - Matched files are sorted alphabetically before loading.
 - Duplicate source paths are loaded only once.
 - If any matched file fails to parse, the map block shows an error for that block.
@@ -395,9 +440,11 @@ Tile setting changes apply to newly rendered maps. Already-open notes may need t
 
 | Setting | Stored key | Default | Description |
 |---|---|---|---|
-| Exports folder | `exportsFolder` | empty | Vault-relative folder used for bare filenames and date keywords. Trailing slashes are removed. |
-| Export filename pattern | `exportFilenamePattern` | `*{date}*` | Glob template for date keyword lookup. Supports `{date}`, `*`, and `?`. |
-| Export date format | `exportDateFormat` | `YYYY-MM-DD` | Date formatting tokens used by date keywords. Supports `YYYY`, `MM`, `DD`. |
+| Exports folder | `exportsFolder` | empty | Vault-relative root folder used for bare filenames and date keywords. Leading/trailing slashes are removed. |
+| Export folder structure | `exportFolderGranularity` | `flat` | Nested folder mode for date keywords and folder sources: `flat`, `year`, `month`, `week`, `day`, or `custom`. Defaults to flat for backwards compatibility. |
+| Custom folder path template | `exportFolderCustomPathTemplate` | `{year}/{year}-{month}` | Used when structure is `custom`. Supports slash-separated date folders. |
+| Export filename/path pattern | `exportFilenamePattern` | `*{date}*` | Glob/template for date keyword lookup. Supports iso.me tokens (`{date}`, `{year}`, `{month}`, `{day}`, `{type}`, `{format}`, etc.), `*`, `?`, and folder paths. |
+| Export date format | `exportDateFormat` | `YYYY-MM-DD` | Date formatting tokens used for `{date}` in date keywords. Supports `YYYY`, `MM`, `DD`. |
 
 ### Map defaults and layer styling
 
@@ -911,11 +958,11 @@ Check:
 - The path is relative to the vault root.
 - The file is inside the vault.
 - **Exports folder** is set correctly if you are using bare filenames or date keywords.
-- Date keyword pattern matches the actual filename.
+- Date keyword pattern and nested folder structure match the actual export path.
 
 ### Date keyword does not find my file
 
-Use a more specific or more permissive **Export filename pattern**.
+Use a more specific or more permissive **Export filename/path pattern**, and confirm **Export folder structure** if the file lives in nested folders.
 
 For example, if files are named:
 

@@ -1,4 +1,9 @@
 import { Plugin } from "obsidian";
+import {
+	isExportFolderGranularity,
+	normalizeExportFolderPathTemplate,
+	normalizeVaultFolder,
+} from "./export-layout";
 import { parseBlockConfig } from "./parser";
 import { MapRenderChild } from "./render/map-block";
 import {
@@ -40,6 +45,23 @@ export default class IsoMeMapsPlugin extends Plugin {
 		if (!data || data.tileProvider === undefined) {
 			const match = findProviderByUrl(this.settings.tileUrl);
 			this.settings.tileProvider = match ? match.id : "custom";
+			dirty = true;
+		}
+		if (!isExportFolderGranularity(this.settings.exportFolderGranularity)) {
+			this.settings.exportFolderGranularity =
+				DEFAULT_SETTINGS.exportFolderGranularity;
+			dirty = true;
+		}
+		const normalizedExportsFolder = normalizeVaultFolder(this.settings.exportsFolder);
+		if (normalizedExportsFolder !== this.settings.exportsFolder) {
+			this.settings.exportsFolder = normalizedExportsFolder;
+			dirty = true;
+		}
+		const normalizedFolderTemplate = normalizeExportFolderPathTemplate(
+			this.settings.exportFolderCustomPathTemplate,
+		);
+		if (normalizedFolderTemplate !== this.settings.exportFolderCustomPathTemplate) {
+			this.settings.exportFolderCustomPathTemplate = normalizedFolderTemplate;
 			dirty = true;
 		}
 		if (dirty) await this.saveSettings();

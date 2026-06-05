@@ -1,11 +1,13 @@
 import { App, normalizePath } from "obsidian";
 import { CSVParseError, parseExportCSV } from "./csv-parser";
+import { isDateKeyword, resolveDateKeyword } from "./date-resolver";
 import {
-	applyDateToPattern,
-	formatDate,
-	isDateKeyword,
-	resolveDateKeyword,
-} from "./date-resolver";
+	dateLookupPaths,
+	exportFolderMaxDepth,
+	ExportFolderGranularity,
+	joinVaultPath,
+	normalizeVaultFolder,
+} from "./export-layout";
 import { GPXParseError, parseGPX } from "./gpx-parser";
 import { MarkdownParseError, parseExportMarkdown } from "./markdown-parser";
 import { isOverlandJSON, parseOverland } from "./overland-parser";
@@ -16,6 +18,8 @@ export interface SourceResolutionSettings {
 	exportsFolder?: string;
 	exportFilenamePattern?: string;
 	exportDateFormat?: string;
+	exportFolderGranularity?: ExportFolderGranularity;
+	exportFolderCustomPathTemplate?: string;
 }
 
 export class DataLoadError extends Error {
@@ -134,70 +138,177 @@ function splitDirAndName(path: string): { dir: string; name: string } {
 	return { dir: path.slice(0, idx), name: path.slice(idx + 1) };
 }
 
+const MAX_EXPLICIT_GLOB_DEPTH = 8;
+
+interface SourceGroup {
+	paths: string[];
+	alternatives: boolean;
+}
+
+interface ExpandSourceOptions {
+	noMatchAsEmpty?: boolean;
+	missingFileAsEmpty?: boolean;
+}
+
+function hasGlob(path: string): boolean {
+	return path.includes("*") || path.includes("?");
+}
+
 function globToRegExp(pattern: string): RegExp {
 	let out = "^";
 	for (let i = 0; i < pattern.length; i++) {
 		const ch = pattern[i];
-		if (ch === "*") out += "[^/]*";
+		if (ch === "*" && pattern[i + 1] === "*") {
+			out += ".*";
+			i++;
+		} else if (ch === "*") out += "[^/]*";
 		else if (ch === "?") out += "[^/]";
 		else if (/[.+^${}()|[\]\\]/.test(ch)) out += `\\${ch}`;
 		else out += ch;
 	}
 	out += "$";
-	return new RegExp(out);
+	return new RegExp(out, "i");
 }
 
-async function expandSource(app: App, source: string): Promise<string[]> {
+function splitGlobRoot(path: string): { root: string; pattern: string } {
+	const parts = path.split("/").filter((p) => p.length > 0);
+	const idx = parts.findIndex(hasGlob);
+	if (idx < 0) {
+		const { dir, name } = splitDirAndName(path);
+		return { root: dir || "/", pattern: name };
+	}
+	return {
+		root: parts.slice(0, idx).join("/") || "/",
+		pattern: parts.slice(idx).join("/"),
+	};
+}
+
+function relativePathFromRoot(rootPath: string, filePath: string): string {
+	const root = rootPath === "/" ? "" : rootPath.replace(/\/+$/g, "");
+	if (!root) return filePath;
+	const prefix = `${root}/`;
+	return filePath.startsWith(prefix) ? filePath.slice(prefix.length) : filePath;
+}
+
+function globSearchDepth(pattern: string): number {
+	if (pattern.includes("**")) return MAX_EXPLICIT_GLOB_DEPTH;
+	const { dir } = splitDirAndName(pattern);
+	if (!dir) return 0;
+	return Math.min(dir.split("/").filter(Boolean).length, MAX_EXPLICIT_GLOB_DEPTH);
+}
+
+async function statPath(app: App, path: string): Promise<{ type: string } | null> {
+	try {
+		return (await app.vault.adapter.stat(path)) as { type: string } | null;
+	} catch {
+		return null;
+	}
+}
+
+async function collectSupportedFiles(
+	app: App,
+	folderPath: string,
+	maxDepth: number,
+): Promise<string[]> {
+	const files: string[] = [];
+	const visit = async (dir: string, depth: number): Promise<void> => {
+		const listing = await app.vault.adapter.list(dir || "/");
+		files.push(...listing.files.filter(hasSupportedExtension));
+		if (depth >= maxDepth) return;
+		for (const folder of listing.folders.sort()) {
+			await visit(folder, depth + 1);
+		}
+	};
+
+	try {
+		await visit(folderPath === "/" ? "/" : folderPath, 0);
+	} catch {
+		return [];
+	}
+	return files.sort();
+}
+
+async function expandGlobSource(
+	app: App,
+	path: string,
+	options: ExpandSourceOptions = {},
+): Promise<string[]> {
+	const { root, pattern } = splitGlobRoot(path);
+	const files = await collectSupportedFiles(app, root, globSearchDepth(pattern));
+	const re = globToRegExp(pattern);
+	const matches = files.filter((file) => {
+		const relative = relativePathFromRoot(root, file);
+		return re.test(relative);
+	});
+	if (matches.length > 0) return matches;
+	return options.noMatchAsEmpty ? [] : [path];
+}
+
+async function expandSource(
+	app: App,
+	source: string,
+	settings: SourceResolutionSettings = {},
+	options: ExpandSourceOptions = {},
+): Promise<string[]> {
 	const path = normalizePath(source);
 
-	// Filename glob (e.g. "exports/iso.me*.json"). We only support wildcards in
-	// the final path component — that's the per-day-export use case.
-	if (path.includes("*") || path.includes("?")) {
-		const { dir, name } = splitDirAndName(path);
-		if (name.includes("*") || name.includes("?")) {
-			let listing: { files: string[]; folders: string[] };
-			try {
-				listing = await app.vault.adapter.list(dir || "/");
-			} catch {
-				return [path];
-			}
-			const re = globToRegExp(name);
-			const matches = listing.files
-				.filter((p) => {
-					const tail = splitDirAndName(p).name;
-					return re.test(tail) && hasSupportedExtension(tail);
-				})
-				.sort();
-			return matches.length > 0 ? matches : [path];
-		}
-		return [path];
+	if (hasGlob(path)) {
+		return expandGlobSource(app, path, options);
 	}
 
-	// Folder source: include every supported export inside.
-	let stat: { type: string } | null = null;
-	try {
-		stat = (await app.vault.adapter.stat(path)) as { type: string } | null;
-	} catch {
-		stat = null;
-	}
+	const stat = await statPath(app, path);
 	if (stat && stat.type === "folder") {
-		try {
-			const listing = await app.vault.adapter.list(path);
-			const matches = listing.files.filter(hasSupportedExtension).sort();
-			return matches.length > 0 ? matches : [path];
-		} catch {
-			return [path];
-		}
+		const matches = await collectSupportedFiles(
+			app,
+			path,
+			exportFolderMaxDepth(
+				settings.exportFolderGranularity ?? "flat",
+				settings.exportFolderCustomPathTemplate,
+			),
+		);
+		if (matches.length > 0) return matches;
+		return options.noMatchAsEmpty ? [] : [path];
+	}
+
+	if (options.missingFileAsEmpty && (!stat || stat.type !== "file")) {
+		return [];
 	}
 
 	return [path];
 }
 
-async function expandSources(app: App, sources: string[]): Promise<string[]> {
+async function expandSourceGroup(
+	app: App,
+	group: SourceGroup,
+	settings: SourceResolutionSettings,
+): Promise<string[]> {
+	if (!group.alternatives) {
+		return expandSource(app, group.paths[0], settings);
+	}
+
+	const matches: string[] = [];
+	for (const path of group.paths) {
+		matches.push(
+			...(await expandSource(app, path, settings, {
+				noMatchAsEmpty: true,
+				missingFileAsEmpty: true,
+			})),
+		);
+	}
+
+	if (matches.length > 0) return matches;
+	return expandSource(app, group.paths[0], settings);
+}
+
+async function expandSourceGroups(
+	app: App,
+	groups: SourceGroup[],
+	settings: SourceResolutionSettings,
+): Promise<string[]> {
 	const seen = new Set<string>();
 	const out: string[] = [];
-	for (const s of sources) {
-		const expanded = await expandSource(app, s);
+	for (const group of groups) {
+		const expanded = await expandSourceGroup(app, group, settings);
 		for (const p of expanded) {
 			if (!seen.has(p)) {
 				seen.add(p);
@@ -252,30 +363,39 @@ export async function loadExport(app: App, source: string): Promise<ExportShape>
 	return parseJSONExport(raw, path);
 }
 
-export function preprocessSources(
+function preprocessSourceGroups(
 	sources: string[],
 	settings: SourceResolutionSettings = {},
 	now: Date = new Date(),
-): string[] {
-	const folder = (settings.exportsFolder ?? "").replace(/\/+$/, "");
-	const pattern = settings.exportFilenamePattern ?? "*{date}*";
-	const dateFormat = settings.exportDateFormat ?? "YYYY-MM-DD";
-	const out: string[] = [];
-	const join = (name: string) => (folder ? `${folder}/${name}` : name);
+): SourceGroup[] {
+	const folder = normalizeVaultFolder(settings.exportsFolder ?? "");
+	const out: SourceGroup[] = [];
 	for (const raw of sources) {
 		const trimmed = raw.trim();
 		if (!trimmed) continue;
 		if (isDateKeyword(trimmed)) {
 			for (const date of resolveDateKeyword(trimmed, now)) {
-				out.push(join(applyDateToPattern(pattern, formatDate(date, dateFormat))));
+				out.push({ paths: dateLookupPaths(date, settings), alternatives: true });
 			}
 			continue;
 		}
 		if (folder && !trimmed.includes("/")) {
-			out.push(join(trimmed));
+			out.push({ paths: [joinVaultPath(folder, trimmed)], alternatives: false });
 			continue;
 		}
-		out.push(trimmed);
+		out.push({ paths: [trimmed], alternatives: false });
+	}
+	return out;
+}
+
+export function preprocessSources(
+	sources: string[],
+	settings: SourceResolutionSettings = {},
+	now: Date = new Date(),
+): string[] {
+	const out: string[] = [];
+	for (const group of preprocessSourceGroups(sources, settings, now)) {
+		out.push(...group.paths);
 	}
 	return out;
 }
@@ -285,8 +405,8 @@ export async function loadExports(
 	sources: string[],
 	settings: SourceResolutionSettings = {},
 ): Promise<ExportShape> {
-	const resolved = preprocessSources(sources, settings);
-	const expanded = await expandSources(app, resolved);
+	const resolved = preprocessSourceGroups(sources, settings);
+	const expanded = await expandSourceGroups(app, resolved, settings);
 	const all = await Promise.all(expanded.map((s) => loadExport(app, s)));
 	const visits: Visit[] = [];
 	const points: LocationPoint[] = [];
