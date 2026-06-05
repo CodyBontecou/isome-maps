@@ -1,8 +1,8 @@
 {
 	"id": "iso-me-maps",
 	"name": "iso.me Maps",
-	"version": "0.7.10",
-	"minAppVersion": "1.4.10",
+	"version": "0.7.11",
+	"minAppVersion": "1.13.0",
 	"description": "Render Leaflet maps inline from iso.me exports. Supports JSON, CSV, Markdown, OwnTracks, Overland, and GPX formats with stats and duration-encoded markers.",
 	"author": "Cody Bontecou",
 	"authorUrl": "https://github.com/codybontecou",

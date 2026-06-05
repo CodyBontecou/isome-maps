@@ -98,7 +98,7 @@ export function renderDateTemplate(
 	unknownTokenReplacement?: string,
 ): string {
 	const tokens = dateTemplateTokens(d, dateFormat);
-	return template.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (match, name) => {
+	return template.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (match: string, name: string): string => {
 		const value = tokens[name];
 		if (value !== undefined) return value;
 		return unknownTokenReplacement ?? match;
@@ -113,7 +113,7 @@ export function applyDateToPattern(
 	if (formattedDateOrDate instanceof Date) {
 		const tokens = dateTemplateTokens(formattedDateOrDate, dateFormat);
 		let sawDateToken = false;
-		const resolved = pattern.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (match, name) => {
+		const resolved = pattern.replace(/\{([a-zA-Z][a-zA-Z0-9_]*)\}/g, (match: string, name: string): string => {
 			const value = tokens[name];
 			if (value === undefined) return match;
 			if (name !== "type" && name !== "format" && name !== "time") {

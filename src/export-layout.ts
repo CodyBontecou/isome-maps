@@ -79,11 +79,19 @@ export function customExportFolderPathTemplateDepth(template: string): number {
 	return Math.min(normalized.split("/").length, MAX_CUSTOM_EXPORT_FOLDER_DEPTH);
 }
 
+function stripControlCharacters(value: string): string {
+	let out = "";
+	for (let i = 0; i < value.length; i++) {
+		const code = value.charCodeAt(i);
+		if (code >= 32 && code !== 127) out += value[i];
+	}
+	return out;
+}
+
 export function normalizeExportFolderPathTemplate(template: string): string {
-	const normalized = template
+	const normalized = stripControlCharacters(template)
 		.trim()
 		.replace(/\\/g, "/")
-		.replace(/[\u0000-\u001f\u007f]/g, "")
 		.replace(/^\/+|\/+$/g, "")
 		.replace(/\/+/g, "/");
 

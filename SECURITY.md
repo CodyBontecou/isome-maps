@@ -1,6 +1,6 @@
 ---
 plugin-id: iso-me-maps
-version: 0.7.10
+version: 0.7.11
 last-updated: 2026-06-05
 ---
 
