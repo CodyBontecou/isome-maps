@@ -4,6 +4,8 @@
 
 Render interactive Leaflet maps inline in Obsidian notes from [iso.me](https://apps.apple.com/us/app/iso-me/id6761960794) exports and compatible location-tracking formats.
 
+Privacy note: the plugin reads only the export files/folders you reference in `iso-me` code blocks. It does not upload vault content; network activity is limited to loading map tiles from the selected tile provider. See [SECURITY.md](SECURITY.md) for the full disclosure.
+
 The plugin registers an Obsidian Markdown code block named `iso-me`. Add a fenced block to any note, point it at one or more export files in your vault, and the plugin renders visits, routes, outliers, stats, and optional interactive filters.
 
 ---
