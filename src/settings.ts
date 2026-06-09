@@ -144,8 +144,55 @@ export function getProvider(id: TileProviderId): TileProviderPreset {
 	return TILE_PROVIDERS.find((p) => p.id === id) ?? DEFAULT_PROVIDER;
 }
 
-function isTileProviderId(value: unknown): value is TileProviderId {
+export function isTileProviderId(value: unknown): value is TileProviderId {
 	return typeof value === "string" && TILE_PROVIDERS.some((p) => p.id === value);
+}
+
+export interface TileLayerConfig {
+	url: string;
+	attribution: string;
+}
+
+export interface TileLayerOverrides {
+	tile_provider?: string;
+	tile_url?: string;
+	tile_attribution?: string;
+}
+
+function nonEmptyTrimmed(value: string | undefined): string | undefined {
+	const trimmed = value?.trim();
+	return trimmed && trimmed.length > 0 ? trimmed : undefined;
+}
+
+export function resolveTileLayer(
+	settings: Pick<IsoMeSettings, "tileUrl" | "tileAttribution">,
+	overrides: TileLayerOverrides = {},
+): TileLayerConfig {
+	let url = settings.tileUrl;
+	let attribution = settings.tileAttribution;
+
+	const providerId = nonEmptyTrimmed(overrides.tile_provider)?.toLowerCase();
+	if (providerId && isTileProviderId(providerId)) {
+		const provider = getProvider(providerId);
+		if (provider.id !== "custom") {
+			url = provider.url;
+			attribution = provider.attribution;
+		}
+	}
+
+	const overrideUrl = nonEmptyTrimmed(overrides.tile_url);
+	const hasOverrideAttribution = overrides.tile_attribution !== undefined;
+	if (overrideUrl) {
+		url = overrideUrl;
+		const matchedProvider = findProviderByUrl(overrideUrl);
+		attribution = hasOverrideAttribution
+			? overrides.tile_attribution ?? ""
+			: matchedProvider?.attribution ?? "";
+	} else if (hasOverrideAttribution) {
+		attribution = overrides.tile_attribution ?? "";
+	}
+
+	return { url, attribution };
 }
 
 function tileProviderOptions(): Record<string, string> {

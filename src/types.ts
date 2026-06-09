@@ -44,5 +44,8 @@ export interface BlockConfig {
 	show_stats?: boolean;
 	interactive?: boolean;
 	auto_fit?: boolean;
+	tile_provider?: string;
+	tile_url?: string;
+	tile_attribution?: string;
 	title?: string;
 }

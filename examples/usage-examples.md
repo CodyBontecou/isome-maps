@@ -126,20 +126,44 @@ interactive: true
 
 ---
 
+## Per-map tile provider
+
+Override the plugin-wide basemap for a single map without changing your default tile provider:
+
+```iso-me
+source: san-francisco-combined.json
+title: Satellite map
+tile_provider: esri-world-imagery
+```
+
+Use a one-off custom Leaflet tile URL when you need a layer that is not in the preset list:
+
+```iso-me
+source: commute-points.gpx
+title: Topographic commute
+tile_url: https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png
+tile_attribution: '&copy; OpenStreetMap contributors, OpenTopoMap (CC-BY-SA)'
+```
+
+---
+
 ## Full options reference
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `source` | path | *(required)* | Single export file (vault-relative) |
-| `sources` | list | — | Multiple export files, combined into one map |
-| `title` | text | — | Heading shown above the map |
-| `height` | number | 400 | Map height in pixels |
-| `zoom` | number | 11 | Starting zoom level |
-| `center` | `[lat, lon]` | `[0, 0]` | Starting center point |
-| `show_visits` | boolean | `true` | Show visit markers |
-| `show_routes` | boolean | `true` | Show route polylines |
-| `show_stats` | boolean | `false` | Show the summary stats bar |
-| `interactive` | boolean | `false` | Show day/time filter controls |
+| Key                | Type              | Default              | Description                                   |
+| ------------------ | ----------------- | -------------------- | --------------------------------------------- |
+| `source`           | path              | *(required)*         | Single export file (vault-relative)           |
+| `sources`          | list              | —                    | Multiple export files, combined into one map  |
+| `title`            | text              | —                    | Heading shown above the map                   |
+| `height`           | number            | 400                  | Map height in pixels                          |
+| `zoom`             | number            | 11                   | Starting zoom level                           |
+| `center`           | `[lat, lon]`      | `[0, 0]`             | Starting center point                         |
+| `show_visits`      | boolean           | `true`               | Show visit markers                            |
+| `show_routes`      | boolean           | `true`               | Show route polylines                          |
+| `show_stats`       | boolean           | `false`              | Show the summary stats bar                    |
+| `interactive`      | boolean           | `false`              | Show day/time filter controls                 |
+| `tile_provider`    | tile provider ID  | plugin setting       | Override the basemap preset for this map only |
+| `tile_url`         | Leaflet tile URL  | provider URL         | Override the basemap URL for this map only    |
+| `tile_attribution` | HTML string       | provider attribution | Attribution for a per-map custom tile URL     |
 
 ---
 

@@ -171,6 +171,7 @@ show_routes: true
 show_stats: false
 interactive: false
 auto_fit: true
+tile_provider: carto-positron
 title: April trip
 ```
 ````
@@ -188,6 +189,9 @@ title: April trip
 | `show_routes` | boolean | No | plugin **Show routes by default** (`true`) | Shows GPS route polylines when the export contains points. Outliers are excluded. |
 | `show_stats` | boolean | No | `false` | Shows the stats bar above the map. This is per-block only; there is no settings-tab default for stats. |
 | `interactive` | boolean | No | `false` | Shows day and time-of-day filters above the map. Filters re-render visits, routes, and outliers. |
+| `tile_provider` | tile provider ID | No | plugin **Tile provider** | Overrides the basemap preset for this map only. Use IDs from the tile settings table below, such as `esri-world-imagery` or `carto-positron`. |
+| `tile_url` | Leaflet tile URL | No | selected provider URL | Overrides the basemap URL for this map only. For arbitrary/custom URLs, also provide `tile_attribution`. Alias: `tile_layer_url`. |
+| `tile_attribution` | HTML string | No | selected provider attribution | Overrides attribution for this map only. Required for most custom tile URLs. |
 
 ### Parameter syntax rules
 
@@ -256,6 +260,27 @@ sources: exports/visits.md, exports/points.md
 ````
 
 If both `source` and `sources` are present, all listed sources are loaded and merged.
+
+### Per-map tile providers
+
+The settings tab controls the default basemap, but each map block can override it without changing any other map. If both `tile_provider` and `tile_url` are present, the custom `tile_url` wins. For example, keep Esri World Imagery as your default and switch a single map to a light Carto layer:
+
+````markdown
+```iso-me
+source: exports/city-walk.json
+tile_provider: carto-positron
+```
+````
+
+For a one-off custom Leaflet tile URL, set `tile_url` and its attribution:
+
+````markdown
+```iso-me
+source: exports/trip.json
+tile_url: https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png
+tile_attribution: '&copy; OpenStreetMap contributors, OpenTopoMap (CC-BY-SA)'
+```
+````
 
 ---
 
@@ -438,7 +463,7 @@ Available tile provider IDs:
 | `osm` | OpenStreetMap | Mobile only; desktop Obsidian/Electron is blocked by OSM tile server referer policy. |
 | `custom` | Custom | Use your own Leaflet tile URL and attribution. |
 
-Tile setting changes apply to newly rendered maps. Already-open notes may need to be reloaded.
+Tile setting changes apply to newly rendered maps. Already-open notes may need to be reloaded. These defaults can be overridden per map block with `tile_provider`, `tile_url`, and `tile_attribution`.
 
 ### Export lookup settings
 

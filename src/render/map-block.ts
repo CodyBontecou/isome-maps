@@ -1,7 +1,7 @@
 import * as L from "leaflet";
 import { App, MarkdownPostProcessorContext, MarkdownRenderChild } from "obsidian";
 import { DataLoadError, loadExports } from "../data-loader";
-import { IsoMeSettings } from "../settings";
+import { IsoMeSettings, resolveTileLayer } from "../settings";
 import { BlockConfig, ExportShape } from "../types";
 import {
 	buildControls,
@@ -122,8 +122,13 @@ export class MapRenderChild extends MarkdownRenderChild {
 		});
 		this.map = map;
 
-		L.tileLayer(this.settings.tileUrl, {
-			attribution: this.settings.tileAttribution,
+		const tileLayer = resolveTileLayer(this.settings, {
+			tile_provider: this.cfg.tile_provider,
+			tile_url: this.cfg.tile_url,
+			tile_attribution: this.cfg.tile_attribution,
+		});
+		L.tileLayer(tileLayer.url, {
+			attribution: tileLayer.attribution,
 			maxZoom: 19,
 		}).addTo(map);
 

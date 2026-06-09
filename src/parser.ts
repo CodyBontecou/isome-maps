@@ -9,6 +9,10 @@ const BOOL_KEYS = new Set([
 ]);
 const NUMBER_KEYS = new Set(["zoom", "height"]);
 
+function normalizeKey(key: string): string {
+	return key.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase().replace(/-/g, "_");
+}
+
 function parseCenter(value: string): [number, number] | undefined {
 	const m = value.match(/^\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]$/);
 	if (!m) return undefined;
@@ -53,7 +57,7 @@ export function parseBlockConfig(source: string): BlockConfig {
 		if (!line || line.startsWith("#")) continue;
 		const m = line.match(/^([a-z_-]+)\s*:\s*(.*)$/i);
 		if (!m) continue;
-		const key = m[1].toLowerCase();
+		const key = normalizeKey(m[1]);
 		const rawValue = m[2].trim();
 		const value = unquote(rawValue);
 
@@ -79,6 +83,12 @@ export function parseBlockConfig(source: string): BlockConfig {
 			cfg.source = value;
 		} else if (key === "title") {
 			cfg.title = value;
+		} else if (key === "tile_provider") {
+			cfg.tile_provider = value.toLowerCase();
+		} else if (key === "tile_url" || key === "tile_layer_url") {
+			cfg.tile_url = value;
+		} else if (key === "tile_attribution") {
+			cfg.tile_attribution = value;
 		} else if (key === "center") {
 			const c = parseCenter(value);
 			if (c) cfg.center = c;
