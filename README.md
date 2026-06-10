@@ -189,9 +189,11 @@ title: April trip
 | `show_routes` | boolean | No | plugin **Show routes by default** (`true`) | Shows GPS route polylines when the export contains points. Outliers are excluded. |
 | `show_stats` | boolean | No | `false` | Shows the stats bar above the map. This is per-block only; there is no settings-tab default for stats. |
 | `interactive` | boolean | No | `false` | Shows day and time-of-day filters above the map. Filters re-render visits, routes, and outliers. |
-| `tile_provider` | tile provider ID | No | plugin **Tile provider** | Overrides the basemap preset for this map only. Use IDs from the tile settings table below, such as `esri-world-imagery` or `carto-positron`. |
+| `tile_provider` | tile provider ID | No | plugin **Tile provider** | Overrides the basemap preset for this map only. Accepts `carto-voyager`, `carto-positron`, `carto-dark-matter`, `opentopomap`, `esri-world-imagery`, `osm`, or `custom`. |
 | `tile_url` | Leaflet tile URL | No | selected provider URL | Overrides the basemap URL for this map only. For arbitrary/custom URLs, also provide `tile_attribution`. Alias: `tile_layer_url`. |
 | `tile_attribution` | HTML string | No | selected provider attribution | Overrides attribution for this map only. Required for most custom tile URLs. |
+
+`custom` is accepted as a `tile_provider` value when you also provide `tile_url` and, usually, `tile_attribution`; otherwise the current default provider URL remains in effect.
 
 ### Parameter syntax rules
 
