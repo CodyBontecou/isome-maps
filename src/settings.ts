@@ -1,5 +1,4 @@
-import { App, PluginSettingTab } from "obsidian";
-import type { SettingDefinitionItem } from "obsidian";
+import { App, PluginSettingTab, Setting } from "obsidian";
 import {
 	DEFAULT_CUSTOM_EXPORT_FOLDER_PATH_TEMPLATE,
 	EXPORT_FOLDER_PATH_TEMPLATE_VARIABLES,
@@ -216,186 +215,170 @@ export class IsoMeSettingTab extends PluginSettingTab {
 		super(app, plugin);
 	}
 
-	getSettingDefinitions(): SettingDefinitionItem<IsoMeSettingKey>[] {
-		const folderTemplateVariables = EXPORT_FOLDER_PATH_TEMPLATE_VARIABLES
-			.map((v) => `{${v}}`)
-			.join(", ");
+	display(): void {
+		const { containerEl } = this;
+		containerEl.empty();
 
-		return [
-			{
-				name: "Tile provider",
-				desc: this.tileProviderDescription(),
-				control: {
-					type: "dropdown",
-					key: "tileProvider",
-					defaultValue: DEFAULT_SETTINGS.tileProvider,
-					options: tileProviderOptions(),
-				},
-			},
-			{
-				name: "Tile layer URL",
-				desc: "Leaflet tile URL template (e.g. https://.../{z}/{x}/{y}.png).",
-				visible: () => this.plugin.settings.tileProvider === "custom",
-				control: {
-					type: "text",
-					key: "tileUrl",
-					placeholder: DEFAULT_SETTINGS.tileUrl,
-					defaultValue: DEFAULT_SETTINGS.tileUrl,
-				},
-			},
-			{
-				name: "Tile attribution",
-				desc: "HTML attribution string shown in the bottom-right of the map.",
-				visible: () => this.plugin.settings.tileProvider === "custom",
-				control: {
-					type: "text",
-					key: "tileAttribution",
-				},
-			},
-			{
-				type: "group",
-				heading: "Exports",
-				cls: "iso-me-section-header",
-				items: [
-					{
-						name: "Exports folder",
-						desc: "Vault-relative root folder holding your iso.me exports (e.g. `exports`). Bare `source:` filenames in code blocks are looked up here, and date keywords like `today` / `yesterday` search this folder plus the nested structure below.",
-						control: {
-							type: "text",
-							key: "exportsFolder",
-							placeholder: "exports",
-						},
-					},
-					{
-						name: "Export folder structure",
-						desc: "Opt in to nested export folders. Flat keeps existing behavior. Nested choices also keep flat files under the exports folder loadable for gradual migrations.",
-						control: {
-							type: "dropdown",
-							key: "exportFolderGranularity",
-							defaultValue: DEFAULT_SETTINGS.exportFolderGranularity,
-							options: EXPORT_FOLDER_GRANULARITY_OPTIONS,
-						},
-					},
-					{
-						name: "Custom folder path template",
-						desc: `Used when Export folder structure is Custom. Use / for folders. Variables: ${folderTemplateVariables}. iso.me's DATED preset uses {year}/{year}-{month}.`,
-						control: {
-							type: "text",
-							key: "exportFolderCustomPathTemplate",
-							placeholder: DEFAULT_CUSTOM_EXPORT_FOLDER_PATH_TEMPLATE,
-							defaultValue: DEFAULT_CUSTOM_EXPORT_FOLDER_PATH_TEMPLATE,
-						},
-					},
-					{
-						name: "Export filename/path pattern",
-						desc: "Glob template used to find an export by date. Supports iso.me filename tokens like `{date}`, `{year}`, `{month}`, `{day}`, `{type}`, and `{format}`; `{type}`, `{format}`, time, and unknown tokens become wildcards. You can include folders here (e.g. `{year}/{year}-{month}/Daily Track - {date}`) or use the folder structure setting above. Default `*{date}*` matches any export filename containing the date.",
-						control: {
-							type: "text",
-							key: "exportFilenamePattern",
-							placeholder: DEFAULT_SETTINGS.exportFilenamePattern,
-							defaultValue: DEFAULT_SETTINGS.exportFilenamePattern,
-						},
-					},
-					{
-						name: "Export date format",
-						desc: "How dates are spelled in your export filenames. Tokens: `YYYY`, `MM`, `DD`. Default `YYYY-MM-DD` matches iso.me's built-in export naming.",
-						control: {
-							type: "text",
-							key: "exportDateFormat",
-							placeholder: DEFAULT_SETTINGS.exportDateFormat,
-							defaultValue: DEFAULT_SETTINGS.exportDateFormat,
-						},
-					},
-				],
-			},
-			{
-				type: "group",
-				heading: "Map defaults",
-				cls: "iso-me-section-header",
-				items: [
-					{
-						name: "Default map height",
-						desc: "Pixel height for maps that don't specify `height:` in the block.",
-						control: {
-							type: "number",
-							key: "defaultHeight",
-							min: 1,
-							step: 1,
-							defaultValue: DEFAULT_SETTINGS.defaultHeight,
-							validate: (value: number): string | void =>
-								Number.isFinite(value) && value > 0
-									? undefined
-									: "Enter a positive pixel height.",
-						},
-					},
-					{
-						name: "Default zoom",
-						control: {
-							type: "number",
-							key: "defaultZoom",
-							step: 1,
-							defaultValue: DEFAULT_SETTINGS.defaultZoom,
-						},
-					},
-					{
-						name: "Route color",
-						control: {
-							type: "text",
-							key: "routeColor",
-							defaultValue: DEFAULT_SETTINGS.routeColor,
-						},
-					},
-					{
-						name: "Visit marker color",
-						control: {
-							type: "text",
-							key: "markerColor",
-							defaultValue: DEFAULT_SETTINGS.markerColor,
-						},
-					},
-					{
-						name: "GPS glitch (outlier) color",
-						desc: "Color for points iso.me has flagged as outliers when shown.",
-						control: {
-							type: "text",
-							key: "outlierColor",
-							defaultValue: DEFAULT_SETTINGS.outlierColor,
-						},
-					},
-					{
-						name: "Show visit markers by default",
-						control: {
-							type: "toggle",
-							key: "showVisitsByDefault",
-							defaultValue: DEFAULT_SETTINGS.showVisitsByDefault,
-						},
-					},
-					{
-						name: "Show routes by default",
-						control: {
-							type: "toggle",
-							key: "showRoutesByDefault",
-							defaultValue: DEFAULT_SETTINGS.showRoutesByDefault,
-						},
-					},
-					{
-						name: "Show GPS glitches (outliers) by default",
-						desc: "Render points iso.me has flagged as outliers as small scatter dots. Outliers are always excluded from route polylines, route distance, and average speed.",
-						control: {
-							type: "toggle",
-							key: "showOutliersByDefault",
-							defaultValue: DEFAULT_SETTINGS.showOutliersByDefault,
-						},
-					},
-				],
-			},
-		];
+		new Setting(containerEl)
+			.setName("Tile provider")
+			.setDesc(this.tileProviderDescription())
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOptions(tileProviderOptions())
+					.setValue(this.plugin.settings.tileProvider)
+					.onChange(async (value) => {
+						await this.applySettingValue("tileProvider", value);
+						this.display();
+					});
+			});
+
+		if (this.plugin.settings.tileProvider === "custom") {
+			this.addTextSetting(
+				"tileUrl",
+				"Tile layer URL",
+				"Leaflet tile URL template (e.g. https://.../{z}/{x}/{y}.png).",
+				DEFAULT_SETTINGS.tileUrl,
+			);
+			this.addTextSetting(
+				"tileAttribution",
+				"Tile attribution",
+				"HTML attribution string shown in the bottom-right of the map.",
+			);
+		}
+
+		this.addSectionHeading("Exports");
+		this.addTextSetting(
+			"exportsFolder",
+			"Exports folder",
+			"Vault-relative root folder holding your iso.me exports (e.g. `exports`). Bare `source:` filenames in code blocks are looked up here, and date keywords like `today` / `yesterday` search this folder plus the nested structure below.",
+			"exports",
+		);
+		this.addDropdownSetting(
+			"exportFolderGranularity",
+			"Export folder structure",
+			"Opt in to nested export folders. Flat keeps existing behavior. Nested choices also keep flat files under the exports folder loadable for gradual migrations.",
+			EXPORT_FOLDER_GRANULARITY_OPTIONS,
+		);
+		this.addTextSetting(
+			"exportFolderCustomPathTemplate",
+			"Custom folder path template",
+			`Used when Export folder structure is Custom. Use / for folders. Variables: ${EXPORT_FOLDER_PATH_TEMPLATE_VARIABLES.map((v) => `{${v}}`).join(", ")}. iso.me's DATED preset uses {year}/{year}-{month}.`,
+			DEFAULT_CUSTOM_EXPORT_FOLDER_PATH_TEMPLATE,
+		);
+		this.addTextSetting(
+			"exportFilenamePattern",
+			"Export filename/path pattern",
+			"Glob template used to find an export by date. Supports iso.me filename tokens like `{date}`, `{year}`, `{month}`, `{day}`, `{type}`, and `{format}`; `{type}`, `{format}`, time, and unknown tokens become wildcards. You can include folders here (e.g. `{year}/{year}-{month}/Daily Track - {date}`) or use the folder structure setting above. Default `*{date}*` matches any export filename containing the date.",
+			DEFAULT_SETTINGS.exportFilenamePattern,
+		);
+		this.addTextSetting(
+			"exportDateFormat",
+			"Export date format",
+			"How dates are spelled in your export filenames. Tokens: `YYYY`, `MM`, `DD`. Default `YYYY-MM-DD` matches iso.me's built-in export naming.",
+			DEFAULT_SETTINGS.exportDateFormat,
+		);
+
+		this.addSectionHeading("Map defaults");
+		this.addNumberSetting(
+			"defaultHeight",
+			"Default map height",
+			"Pixel height for maps that don't specify `height:` in the block.",
+			1,
+			1,
+		);
+		this.addNumberSetting("defaultZoom", "Default zoom", undefined, undefined, 1);
+		this.addTextSetting("routeColor", "Route color");
+		this.addTextSetting("markerColor", "Visit marker color");
+		this.addTextSetting(
+			"outlierColor",
+			"GPS glitch (outlier) color",
+			"Color for points iso.me has flagged as outliers when shown.",
+		);
+		this.addToggleSetting("showVisitsByDefault", "Show visit markers by default");
+		this.addToggleSetting("showRoutesByDefault", "Show routes by default");
+		this.addToggleSetting(
+			"showOutliersByDefault",
+			"Show GPS glitches (outliers) by default",
+			"Render points iso.me has flagged as outliers as small scatter dots. Outliers are always excluded from route polylines, route distance, and average speed.",
+		);
 	}
 
-	async setControlValue(key: string, value: unknown): Promise<void> {
+	private addSectionHeading(name: string): void {
+		new Setting(this.containerEl)
+			.setName(name)
+			.setHeading()
+			.setClass("iso-me-section-header");
+	}
+
+	private addTextSetting(
+		key: IsoMeSettingKey,
+		name: string,
+		desc?: string,
+		placeholder?: string,
+	): void {
+		const setting = new Setting(this.containerEl).setName(name);
+		if (desc) setting.setDesc(desc);
+		setting.addText((text) => {
+			if (placeholder) text.setPlaceholder(placeholder);
+			text.setValue(stringValue(this.plugin.settings[key]));
+			text.onChange(async (value) => {
+				await this.applySettingValue(key, value);
+			});
+		});
+	}
+
+	private addNumberSetting(
+		key: "defaultHeight" | "defaultZoom",
+		name: string,
+		desc?: string,
+		min?: number,
+		step?: number,
+	): void {
+		const setting = new Setting(this.containerEl).setName(name);
+		if (desc) setting.setDesc(desc);
+		setting.addText((text) => {
+			text.inputEl.type = "number";
+			if (min !== undefined) text.inputEl.min = String(min);
+			if (step !== undefined) text.inputEl.step = String(step);
+			text.setValue(String(this.plugin.settings[key]));
+			text.onChange(async (value) => {
+				await this.applySettingValue(key, Number(value));
+			});
+		});
+	}
+
+	private addDropdownSetting(
+		key: "exportFolderGranularity",
+		name: string,
+		desc: string | undefined,
+		options: Record<string, string>,
+	): void {
+		const setting = new Setting(this.containerEl).setName(name);
+		if (desc) setting.setDesc(desc);
+		setting.addDropdown((dropdown) => {
+			dropdown
+				.addOptions(options)
+				.setValue(stringValue(this.plugin.settings[key]))
+				.onChange(async (value) => {
+					await this.applySettingValue(key, value);
+				});
+		});
+	}
+
+	private addToggleSetting(key: IsoMeSettingKey, name: string, desc?: string): void {
+		const setting = new Setting(this.containerEl).setName(name);
+		if (desc) setting.setDesc(desc);
+		setting.addToggle((toggle) => {
+			toggle.setValue(this.plugin.settings[key] === true).onChange(async (value) => {
+				await this.applySettingValue(key, value);
+			});
+		});
+	}
+
+	private async applySettingValue(key: IsoMeSettingKey, value: unknown): Promise<void> {
 		const settings = this.plugin.settings;
 
-		switch (key as IsoMeSettingKey) {
+		switch (key) {
 			case "tileProvider": {
 				const id = isTileProviderId(value) ? value : DEFAULT_SETTINGS.tileProvider;
 				settings.tileProvider = id;
@@ -465,7 +448,6 @@ export class IsoMeSettingTab extends PluginSettingTab {
 		}
 
 		await this.plugin.saveSettings();
-		if (key === "tileProvider") this.update();
 	}
 
 	private tileProviderDescription(): string {
