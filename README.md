@@ -547,7 +547,7 @@ Point objects:
 
 File extension: `.csv`
 
-CSV type is detected by the header row.
+CSV type is detected by the header row. Combined iso.me CSV exports are also supported; the plugin reads both the `# VISITS` and `# LOCATION POINTS` sections when present.
 
 #### Visits CSV
 

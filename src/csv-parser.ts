@@ -103,6 +103,53 @@ function isPointsCSV(headers: Map<string, number>): boolean {
 	return headers.has("timestamp") && headers.has("latitude") && headers.has("longitude");
 }
 
+type CSVSectionKind = "visits" | "points";
+
+interface CSVSection {
+	kind: CSVSectionKind;
+	rows: string[][];
+	headers: Map<string, number>;
+}
+
+function csvSectionKind(headers: Map<string, number>): CSVSectionKind | null {
+	if (isVisitsCSV(headers)) return "visits";
+	if (isPointsCSV(headers)) return "points";
+	return null;
+}
+
+function isCommentRow(row: string[]): boolean {
+	return row.length > 0 && row[0].trim().startsWith("#");
+}
+
+function collectSections(rows: string[][]): CSVSection[] {
+	const sections: CSVSection[] = [];
+	let i = 0;
+
+	while (i < rows.length) {
+		const headers = buildHeaderMap(rows[i]);
+		const kind = csvSectionKind(headers);
+		if (!kind) {
+			i++;
+			continue;
+		}
+
+		const sectionRows = [rows[i]];
+		i++;
+
+		while (i < rows.length) {
+			const row = rows[i];
+			if (isCommentRow(row)) break;
+			if (csvSectionKind(buildHeaderMap(row))) break;
+			sectionRows.push(row);
+			i++;
+		}
+
+		sections.push({ kind, rows: sectionRows, headers });
+	}
+
+	return sections;
+}
+
 function cell(row: string[], headers: Map<string, number>, key: string): string | undefined {
 	const index = headers.get(key);
 	return index === undefined ? undefined : row[index];
@@ -167,17 +214,27 @@ export function parseExportCSV(text: string): ExportShape {
 		throw new CSVParseError("CSV is empty");
 	}
 
-	const headerRow = rows[0];
-	const headers = buildHeaderMap(headerRow);
+	const sections = collectSections(rows);
 
-	if (isVisitsCSV(headers)) {
-		return { visits: parseVisits(rows, headers), points: null };
-	}
-	if (isPointsCSV(headers)) {
-		return { visits: null, points: parsePoints(rows, headers) };
+	if (sections.length > 0) {
+		let visits: Visit[] | null = null;
+		let points: LocationPoint[] | null = null;
+
+		for (const section of sections) {
+			if (section.kind === "visits") {
+				const parsed = parseVisits(section.rows, section.headers);
+				visits = visits === null ? parsed : visits.concat(parsed);
+			} else {
+				const parsed = parsePoints(section.rows, section.headers);
+				points = points === null ? parsed : points.concat(parsed);
+			}
+		}
+
+		return { visits, points };
 	}
 
+	const headerRow = rows.find((row) => !isCommentRow(row)) ?? rows[0];
 	throw new CSVParseError(
-		`Unrecognized CSV header. Expected iso.me visits (arrived_at,...) or points (timestamp,latitude,longitude,...). Got: ${headerRow.join(",")}`,
+		`Unrecognized CSV header. Expected iso.me visits (arrived_at,...), points (timestamp,latitude,longitude,...), or combined CSV sections. Got: ${headerRow.join(",")}`,
 	);
 }
